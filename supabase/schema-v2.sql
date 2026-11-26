@@ -293,138 +293,31 @@ begin
   return r;
 end $$;
 
-create or replace function public.set_member_role(p_user uuid, p_role text)
+create or replace function public.set_member_role(target uuid, new_role text)
 returns void language plpgsql security definer set search_path = public as $$
 begin
   if not public.is_admin() then
     raise exception 'yetkiniz yok';
   end if;
-  if p_role not in ('admin','yetkili','uye') then
+  if new_role not in ('admin','yetkili','uye') then
     raise exception 'gecersiz rol';
   end if;
-  update public.profiles set role = p_role where id = p_user;
+  update public.profiles as pr set role = new_role where pr.id = target;
   insert into public.activity_log (actor, action, detail, user_id)
-  select coalesce(p.full_name, p.username), 'rol degisikligi', p_role, auth.uid()
+  select coalesce(p.full_name, p.username), 'rol degisikligi', new_role, auth.uid()
   from public.profiles p where p.id = auth.uid();
 end $$;
 
-create or replace function public.set_member_ban(p_user uuid, p_banned boolean)
+create or replace function public.set_member_ban(target uuid, banned boolean)
 returns void language plpgsql security definer set search_path = public as $$
 begin
   if not public.is_admin() then
     raise exception 'yetkiniz yok';
   end if;
-  update public.profiles set banned = p_banned where id = p_user;
+  update public.profiles as pr set banned = set_member_ban.banned where pr.id = target;
   insert into public.activity_log (actor, action, detail, user_id)
   select coalesce(p.full_name, p.username),
-         case when p_banned then 'uye askiya alindi' else 'uye geri acildi' end,
-         '', auth.uid()
-  from public.profiles p where p.id = auth.uid();
-end $$;
-
--- ------------------------------------------------------------
--- 10) RLS
--- ------------------------------------------------------------
-alter table public.profiles       enable row level security;
-alter table public.projects       enable row level security;
-alter table public.files          enable row level security;
-alter table public.comments       enable row level security;
-alter table public.activity_log   enable row level security;
-alter table public.sessions_log   enable row level security;
-alter table public.site_settings  enable row level security;
-
--- profiles
-drop policy if exists "profiles_public_read"  on public.profiles;
-drop policy if exists "profiles_self_update"  on public.profiles;
-drop policy if exists "profiles_staff_all"    on public.profiles;
-create policy "profiles_public_read" on public.profiles for select using (true);
-create policy "profiles_self_update" on public.profiles for update using (auth.uid() = id) with check (auth.uid() = id);
-create policy "profiles_staff_all"   on public.profiles for all using (public.is_admin()) with check (public.is_admin());
-
--- projects
-drop policy if exists "projects_read"   on public.projects;
-drop policy if exists "projects_staff"  on public.projects;
-create policy "projects_read"  on public.projects for select using (true);
-create policy "projects_staff" on public.projects for all using (public.is_staff()) with check (public.is_staff());
-
--- files
-drop policy if exists "files_read"  on public.files;
-drop policy if exists "files_staff" on public.files;
-create policy "files_read"  on public.files for select using (true);
-create policy "files_staff" on public.files for all using (public.is_staff()) with check (public.is_staff());
-
--- comments
-drop policy if exists "comments_read"   on public.comments;
-drop policy if exists "comments_insert" on public.comments;
-drop policy if exists "comments_staff"  on public.comments;
-create policy "comments_read"   on public.comments for select using (true);
-create policy "comments_insert" on public.comments for insert with check (public.is_member());
-create policy "comments_staff"  on public.comments for all using (public.is_staff()) with check (public.is_staff());
-
--- activity_log
-drop policy if exists "activity_staff_read" on public.activity_log;
-drop policy if exists "activity_insert"     on public.activity_log;
-create policy "activity_staff_read" on public.activity_log for select using (public.is_staff());
-create policy "activity_insert"     on public.activity_log for insert with check (auth.uid() is not null);
-
--- sessions_log
-drop policy if exists "sessions_staff_read" on public.sessions_log;
-drop policy if exists "sessions_self"       on public.sessions_log;
-create policy "sessions_staff_read" on public.sessions_log for select using (public.is_staff());
-create policy "sessions_self"       on public.sessions_log for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
-
--- site_settings
-drop policy if exists "settings_read"  on public.site_settings;
-drop policy if exists "settings_admin" on public.site_settings;
-create policy "settings_read"  on public.site_settings for select using (true);
-create policy "settings_admin" on public.site_settings for all using (public.is_admin()) with check (public.is_admin());
-
--- ------------------------------------------------------------
--- 11) STORAGE BUCKET
--- ------------------------------------------------------------
-insert into storage.buckets (id, name, public)
-values ('proje-dosyalari', 'proje-dosyalari', true)
-on conflict (id) do nothing;
-
-drop policy if exists "storage_read"  on storage.objects;
-drop policy if exists "storage_write" on storage.objects;
-create policy "storage_read"  on storage.objects for select using (bucket_id = 'proje-dosyalari');
-create policy "storage_write" on storage.objects for all using (bucket_id = 'proje-dosyalari' and public.is_staff()) with check (bucket_id = 'proje-dosyalari' and public.is_staff());
-
-
--- ------------------------------------------------------------
--- 12b) ESKİ İMZALARI TEMİZLE (parametre adı değişti)
--- ------------------------------------------------------------
-drop function if exists public.set_member_role(uuid, text);
-drop function if exists public.set_member_ban(uuid, boolean);
-drop function if exists public.bump_download(uuid);
-
--- güncel imzaları yeniden oluştur
-create or replace function public.set_member_role(p_user uuid, p_role text)
-returns void language plpgsql security definer set search_path = public as $$
-begin
-  if not public.is_admin() then
-    raise exception 'yetkiniz yok';
-  end if;
-  if p_role not in ('admin','yetkili','uye') then
-    raise exception 'gecersiz rol';
-  end if;
-  update public.profiles set role = p_role where id = p_user;
-  insert into public.activity_log (actor, action, detail, user_id)
-  select coalesce(p.full_name, p.username), 'rol degisikligi', p_role, auth.uid()
-  from public.profiles p where p.id = auth.uid();
-end $$;
-
-create or replace function public.set_member_ban(p_user uuid, p_banned boolean)
-returns void language plpgsql security definer set search_path = public as $$
-begin
-  if not public.is_admin() then
-    raise exception 'yetkiniz yok';
-  end if;
-  update public.profiles set banned = p_banned where id = p_user;
-  insert into public.activity_log (actor, action, detail, user_id)
-  select coalesce(p.full_name, p.username),
-         case when p_banned then 'uye askiya alindi' else 'uye geri acildi' end,
+         case when banned then 'uye askiya alindi' else 'uye geri acildi' end,
          '', auth.uid()
   from public.profiles p where p.id = auth.uid();
 end $$;
