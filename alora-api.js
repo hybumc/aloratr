@@ -12,9 +12,17 @@
   const BUCKET = 'proje-dosyalari';
   const SESSION_KEY = 'alora.session';
 
+  const SESSION_KEY_V2 = 'alora.session.v2';
   function readSession() {
-    try { return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); }
-    catch (e) { return null; }
+    try {
+      // yeni kimlik modülünün oturumu esas alınır (tek oturum kaynağı)
+      const v2 = localStorage.getItem(SESSION_KEY_V2) || sessionStorage.getItem(SESSION_KEY_V2);
+      if (v2) {
+        const s2 = JSON.parse(v2);
+        if (s2 && s2.access_token) return s2;
+      }
+      return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+    } catch (e) { return null; }
   }
   function writeSession(s) {
     try {
@@ -39,9 +47,11 @@
   /* ---- proxy üzerinden REST ---- */
   async function rest(path, opts) {
     const o = opts || {};
+    session = readSession();
+    session = readSession();
     const headers = Object.assign({
       'x-alora-key': PUBLIC_TOKEN,
-      'x-alora-token': session ? session.access_token : ''
+      ...(session && session.access_token ? { 'x-alora-token': session.access_token } : {})
     }, o.headers || {});
     if (o.json !== undefined) {
       headers['Content-Type'] = 'application/json';
@@ -137,6 +147,7 @@
   }
 
   async function upload(path, file) {
+    session = readSession();
     const res = await fetch(PROXY_URL + '/upload/' + path.split('/').map(encodeURIComponent).join('/'), {
       method: 'POST',
       headers: {
