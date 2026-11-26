@@ -713,6 +713,20 @@ html[data-theme="dark"] .legal-body h4{color:#e8eff6}
 </footer>
 
 <script>
+/* tema düğmesi — erken ve garantili bağlama */
+document.addEventListener("click", function (e) {
+  var btn = e.target.closest && e.target.closest("#themeBtn");
+  if (!btn) return;
+  e.preventDefault();
+  var root = document.documentElement;
+  var dark = root.getAttribute("data-theme") === "dark";
+  if (dark) root.removeAttribute("data-theme");
+  else root.setAttribute("data-theme", "dark");
+  try { localStorage.setItem("alora.theme", dark ? "light" : "dark"); } catch (err) {}
+});
+try { if (localStorage.getItem("alora.theme") === "dark") document.documentElement.setAttribute("data-theme", "dark"); } catch (e) {}
+</script>
+<script>
 /* ============================================================
    ALORA — sayfa içeriği: yasal metinler (Gizlilik, Koşullar,
    Hakkımızda, İletişim, Lisans) + modal davranışları
