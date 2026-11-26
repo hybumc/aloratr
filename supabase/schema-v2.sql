@@ -391,6 +391,47 @@ drop policy if exists "storage_write" on storage.objects;
 create policy "storage_read"  on storage.objects for select using (bucket_id = 'proje-dosyalari');
 create policy "storage_write" on storage.objects for all using (bucket_id = 'proje-dosyalari' and public.is_staff()) with check (bucket_id = 'proje-dosyalari' and public.is_staff());
 
+
+-- ------------------------------------------------------------
+-- 12b) ESKİ İMZALARI TEMİZLE (parametre adı değişti)
+-- ------------------------------------------------------------
+drop function if exists public.set_member_role(uuid, text);
+drop function if exists public.set_member_ban(uuid, boolean);
+drop function if exists public.bump_download(uuid);
+
+-- güncel imzaları yeniden oluştur
+create or replace function public.set_member_role(p_user uuid, p_role text)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_admin() then
+    raise exception 'yetkiniz yok';
+  end if;
+  if p_role not in ('admin','yetkili','uye') then
+    raise exception 'gecersiz rol';
+  end if;
+  update public.profiles set role = p_role where id = p_user;
+  insert into public.activity_log (actor, action, detail, user_id)
+  select coalesce(p.full_name, p.username), 'rol degisikligi', p_role, auth.uid()
+  from public.profiles p where p.id = auth.uid();
+end $$;
+
+create or replace function public.set_member_ban(p_user uuid, p_banned boolean)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_admin() then
+    raise exception 'yetkiniz yok';
+  end if;
+  update public.profiles set banned = p_banned where id = p_user;
+  insert into public.activity_log (actor, action, detail, user_id)
+  select coalesce(p.full_name, p.username),
+         case when p_banned then 'uye askiya alindi' else 'uye geri acildi' end,
+         '', auth.uid()
+  from public.profiles p where p.id = auth.uid();
+end $$;
+
+-- PostgREST şema önbelleğini yenile
+notify pgrst, 'reload schema';
+
 -- ------------------------------------------------------------
 -- 12) MEVCUT ADMIN'İ KORU
 -- ------------------------------------------------------------
