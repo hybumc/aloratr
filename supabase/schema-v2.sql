@@ -293,6 +293,15 @@ begin
   return r;
 end $$;
 
+-- ------------------------------------------------------------
+-- 9b) ESKİ FONKSİYON İMZALARINI TEMİZLE
+--     (parametre adı değiştiği için önce silmek gerekir)
+-- ------------------------------------------------------------
+drop function if exists public.set_member_role(uuid, text);
+drop function if exists public.set_member_ban(uuid, boolean);
+drop function if exists public.bump_download(uuid);
+drop function if exists public.log_activity(text, text, text);
+
 create or replace function public.set_member_role(target uuid, new_role text)
 returns void language plpgsql security definer set search_path = public as $$
 begin
