@@ -98,6 +98,13 @@
     }
     holder.innerHTML = buildHTML(me);
 
+    // .nav-links içindeki doğrudan bağlantılar (Giriş / Üye Ol) gizlenir
+    Array.prototype.forEach.call(nav.children, function (ch) {
+      if (ch === holder) return;
+      var a = ch.tagName === 'A' ? ch : ch.querySelector && ch.querySelector('a');
+      if (a && /giris\.html|kayit\.html/.test(a.getAttribute('href') || '')) ch.style.display = 'none';
+    });
+
     var toggle = document.getElementById('umToggle');
     var drop = document.getElementById('umDrop');
     toggle.addEventListener('click', function (e) {
@@ -124,6 +131,19 @@
   async function boot() {
     var me = await fetchMe();
     if (!me) return;              // giriş yok: Giriş / Üye Ol düğmeleri kalsın
+
+    // site kodunun beklediği oturum nesnesi
+    var p = me.profile || {};
+    window.__aloraUser = {
+      id: me.user.id,
+      email: me.user.email,
+      username: p.username || (me.user.email || '').split('@')[0],
+      full_name: p.full_name || '',
+      role: p.role || 'uye'
+    };
+    // "Yetkili girişi" modali yerine doğrudan panel akışı
+    window.__aloraStaff = (p.role === 'admin' || p.role === 'yetkili');
+
     mount(me);
     // yetkili için proje ekleme düğmeleri
     var staff = me.profile && (me.profile.role === 'admin' || me.profile.role === 'yetkili');
@@ -134,6 +154,13 @@
       });
       var e = document.getElementById('emptyLoginBtn');
       if (e) { e.textContent = 'Yeni Proje Ekle'; e.setAttribute('data-open-add', ''); e.removeAttribute('data-open-login'); }
+      // eski "Yetkili Girişi" düğmeleri de proje ekleme modalini açsın
+      document.querySelectorAll('[data-open-login]').forEach(function (btn) {
+        if (btn.id === 'loginBtn' || btn.id === 'signupBtn') return;
+        btn.setAttribute('data-open-add', '');
+        btn.removeAttribute('data-open-login');
+        if (/Yetkili/i.test(btn.textContent)) btn.textContent = 'Yeni Proje Ekle';
+      });
     }
   }
 
