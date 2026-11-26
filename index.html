@@ -1837,7 +1837,8 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
           '</div>' +
           '<div class="p-actions">' + dl +
             '<button class="btn btn-secondary btn-sm" type="button" data-detail="' + p.id + '">Detay</button>' +
-            (state.user ? '<button class="btn btn-icon" type="button" data-remove="' + p.id + '" title="Projeyi sil" aria-label="Projeyi sil" style="width:36px;height:36px;flex:0 0 auto">✕</button>' : '') +
+            (isStaff() ? '<button class="btn btn-secondary btn-sm" type="button" data-edit="' + p.id + '">Düzenle</button>' : '') +
+            (isStaff() ? '<button class="btn btn-icon" type="button" data-remove="' + p.id + '" title="Projeyi sil" aria-label="Projeyi sil" style="width:36px;height:36px;flex:0 0 auto">✕</button>' : '') +
           '</div>' +
         '</article>';
     }).join('');
@@ -1898,6 +1899,29 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
 
       const det = e.target.closest('[data-detail]');
       if (det) return openDetail(Number(det.getAttribute('data-detail')));
+
+      const ed = e.target.closest('[data-edit]');
+      if (ed) { e.preventDefault(); openEdit(Number(ed.getAttribute('data-edit'))); return; }
+
+      const df = e.target.closest('[data-delfile]');
+      if (df) {
+        e.preventDefault();
+        if (!isStaff()) return;
+        const fid = df.getAttribute('data-delfile');
+        const proj = state.projects.find((x) => (x.files || []).some((f) => String(f.id) === String(fid)));
+        const fobj = proj && proj.files.find((f) => String(f.id) === String(fid));
+        if (!fobj) return;
+        if (!window.confirm('Bu dosya silinsin mi?\n' + fobj.name)) return;
+        try {
+          if (fobj.storage_path) { try { await API.remove(fobj.storage_path); } catch (e3) {} }
+          await API.rest('files?id=eq.' + fid, { method: 'DELETE', prefer: 'return=minimal' });
+          toast('Dosya silindi');
+          if (proj) proj.files = proj.files.filter((f) => String(f.id) !== String(fid));
+          openDetail(proj ? proj.id : state.detailId);
+          await loadProjects();
+        } catch (e4) { toast(e4.message, 'err'); }
+        return;
+      }
 
       const rm = e.target.closest('[data-remove]');
       if (rm) {
@@ -1982,14 +2006,20 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
       const project = Array.isArray(rows) ? rows[0] : rows;
       const projectId = project.id;
 
+      const uploaded = [];
       for (const p of picked) {
         const safe = p.file.name.replace(/[^\w.\-]+/g, '_');
         const path = projectId + '/' + Date.now() + '-' + safe;
         btn.textContent = 'Dosya yükleniyor… (' + safe + ')';
-        await API.upload(path, p.file);
-        await API.rest('files', {
-          json: { project_id: projectId, platform: p.platform, name: p.file.name, storage_path: path, size: p.file.size }
-        });
+        try {
+          await API.upload(path, p.file);
+          await API.rest('files', {
+            json: { project_id: projectId, platform: p.platform, name: p.file.name, storage_path: path, size: p.file.size }
+          });
+          uploaded.push(safe);
+        } catch (upErr) {
+          throw new Error('Dosya yüklenemedi: ' + safe + ' — ' + upErr.message);
+        }
       }
 
       projectForm.reset();
@@ -2024,6 +2054,7 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
         '<div class="dl-main"><div class="dl-name">' + esc(f.name) + '</div>' +
           '<div class="dl-sub">' + (f.sizeText || fmtBytes(f.size)) + ' · ' + (f.downloads || 0) + ' indirme</div></div>' +
         '<a class="btn btn-primary btn-sm" href="' + esc(API.publicUrl(f.storage_path)) + '" data-dl="' + f.id + '" target="_blank" rel="noopener">İndir</a>' +
+        (isStaff() ? '<button class="btn btn-icon" type="button" data-delfile="' + f.id + '" title="Dosyayı sil" style="width:34px;height:34px">✕</button>' : '') +
       '</div>'
     ).join('');
 
@@ -2033,11 +2064,99 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
         (p.release_notes ? '<div class="notes-box"><strong>Güncelleme notları</strong><p>' + esc(p.release_notes) + '</p></div>' : '') +
         ((p.tags || []).length ? '<div class="tags" style="margin-bottom:18px">' + p.tags.map((t) => '<span class="tag">' + esc(t) + '</span>').join('') + '</div>' : '') +
         '<div class="dl-list">' + (files || '<p class="muted-small">Bu projede indirilebilir dosya yok.</p>') + '</div>' +
+        (isStaff() ? (
+          '<div class="notes-box" style="margin-top:16px">' +
+            '<strong>Dosya ekle (yetkili)</strong>' +
+            '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center">' +
+              '<select id="addFilePlatform" class="input" style="max-width:150px">' +
+                '<option value="windows">Windows (EXE)</option>' +
+                '<option value="android">Android (APK)</option>' +
+                '<option value="other">Diğer</option>' +
+              '</select>' +
+              '<input id="addFileInput" type="file" style="flex:1;min-width:180px;font-size:13px" />' +
+              '<button class="btn btn-primary btn-sm" type="button" id="addFileBtn">Yükle</button>' +
+            '</div>' +
+            '<div class="form-error is-hidden" id="addFileErr" style="margin-top:10px"></div>' +
+          '</div>'
+        ) : '') +
       '</div>';
 
     $('#detailCommentCount').textContent = p.commentCount || 0;
     openModal('detailModal');
+    bindDetailFiles(p);
     await loadComments(id);
+  }
+
+  async function openEdit(id) {
+    const p = state.projects.find((x) => x.id === id);
+    if (!p || !isStaff()) return;
+    const name = window.prompt('Proje adı', p.name);
+    if (name === null) return;
+    const desc = window.prompt('Açıklama', p.description || '');
+    if (desc === null) return;
+    const version = window.prompt('Sürüm', p.version || '1.0.0');
+    if (version === null) return;
+    const notes = window.prompt('Güncelleme notları', p.release_notes || '');
+    if (notes === null) return;
+    const status = window.prompt('Durum (yayinda / bakimda / arsiv)', p.status || 'yayinda');
+    if (status === null) return;
+    try {
+      await API.rest('projects?id=eq.' + id, {
+        method: 'PATCH',
+        prefer: 'return=minimal',
+        json: {
+          name: name.trim() || p.name,
+          description: desc.trim(),
+          version: version.trim() || p.version,
+          release_notes: notes,
+          status: ['yayinda', 'bakimda', 'arsiv'].includes(status.trim()) ? status.trim() : p.status
+        }
+      });
+      toast('Proje güncellendi');
+      await loadProjects();
+    } catch (e2) { toast(e2.message, 'err'); }
+  }
+
+  function isStaff() {
+    const u = state.user || window.__aloraUser;
+    return !!(u && (u.role === 'admin' || u.role === 'yetkili'));
+  }
+
+  function bindDetailFiles(p) {
+    const btn = $('#addFileBtn');
+    const input = $('#addFileInput');
+    const err = $('#addFileErr');
+    if (!btn || !input) return;
+    btn.addEventListener('click', async () => {
+      const f = input.files && input.files[0];
+      err.classList.add('is-hidden');
+      if (!f) { err.textContent = 'Önce bir dosya seçin.'; err.classList.remove('is-hidden'); return; }
+      if (f.size > 200 * 1024 * 1024) { err.textContent = 'Dosya 200 MB sınırını aşıyor.'; err.classList.remove('is-hidden'); return; }
+      const platform = $('#addFilePlatform').value;
+      btn.disabled = true;
+      btn.textContent = 'Yükleniyor…';
+      try {
+        const safe = f.name.replace(/[^\w.\-]+/g, '_');
+        const path = p.id + '/' + Date.now() + '-' + safe;
+        await API.upload(path, f);
+        const rows = await API.rest('files', {
+          json: { project_id: p.id, platform: platform, name: f.name, storage_path: path, size: f.size }
+        });
+        const row = Array.isArray(rows) ? rows[0] : rows;
+        p.files = p.files || [];
+        p.files.push({ id: row && row.id, platform: platform, name: f.name, storage_path: path, size: f.size, downloads: 0 });
+        input.value = '';
+        toast('Dosya eklendi: ' + f.name);
+        openDetail(p.id);
+        await loadProjects();
+      } catch (e2) {
+        err.textContent = e2.message;
+        err.classList.remove('is-hidden');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Yükle';
+      }
+    });
   }
 
   function commentHtml(c) {
