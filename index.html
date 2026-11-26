@@ -1007,8 +1007,11 @@ html[data-theme="dark"] .toast{background:#152330;color:#eaf1f8}
   }
 
   /* ---- storage (proxy üzerinden) ---- */
+  const SUPABASE_URL = 'https://mwmeqcdjeyuflkobezby.supabase.co';
+
+  // Indirme: dogrudan Supabase public storage (anahtar gerekmez, herkese acik)
   function publicUrl(path) {
-    return PROXY_URL + '/file/' + path.split('/').map(encodeURIComponent).join('/');
+    return SUPABASE_URL + '/storage/v1/object/public/' + BUCKET + '/' + path.split('/').map(encodeURIComponent).join('/');
   }
 
   async function upload(path, file) {
