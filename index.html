@@ -1631,9 +1631,14 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
   async function loadMe() {
     state.user = null;
     try {
-      // 0) yerel oturum var mı? varsa doğrudan Worker'dan profili çek
+      // 0) yerel oturum: hem alora.session.v2 hem alora.session anahtarını dene
       let raw = null;
       try { raw = JSON.parse(localStorage.getItem('alora.session.v2') || sessionStorage.getItem('alora.session.v2') || 'null'); } catch (e0) {}
+      if (!raw || !raw.access_token) {
+        try { raw = JSON.parse(localStorage.getItem('alora.session') || 'null'); } catch (e0) {}
+      }
+      // token yoksa hiç uğraşma
+      let unused = null;
       if (raw && raw.access_token) {
         try {
           const r = await fetch((window.AloraAPI ? window.AloraAPI.PROXY_URL : 'https://alora-bridge.bold-yew-bb8.workers.dev') + '/auth/user', {
@@ -2059,13 +2064,24 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
         btn.textContent = 'Dosya yükleniyor… (' + safe + ')';
         try {
           const base = done;
+          let sawProgress = false;
+          const fakeTick = setInterval(() => {
+            if (sawProgress) return;
+            const approx = Math.min(p.file.size * 0.9, done + p.file.size * 0.6);
+            const pct = totals ? Math.round((approx / totals) * 100) : 0;
+            bar.querySelector('i').style.width = pct + '%';
+            meta.innerHTML = '<span>' + mb(approx) + ' MB / ' + mb(totals) + ' MB</span><b>' + pct + '%</b>';
+            btn.textContent = 'Gönderiliyor… ' + mb(approx) + ' MB';
+          }, 400);
           await API.upload(path, p.file, (loaded, total) => {
+            if (loaded > 0) sawProgress = true;
             const cur = base + loaded;
             const pct = totals ? Math.round((cur / totals) * 100) : 0;
             bar.querySelector('i').style.width = pct + '%';
             meta.innerHTML = '<span>' + mb(cur) + ' MB / ' + mb(totals) + ' MB</span><b>' + pct + '%</b>';
             btn.textContent = pct + '% yükleniyor…';
           });
+          clearInterval(fakeTick);
           done += p.file.size;
           await API.rest('files', {
             json: { project_id: projectId, platform: p.platform, name: p.file.name, storage_path: path, size: p.file.size }
@@ -2209,7 +2225,13 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
       try {
         const safe = f.name.replace(/[^\w.\-]+/g, '_');
         const path = p.id + '/' + Date.now() + '-' + safe;
+        const ftick = setInterval(() => {
+          if (barFill && barFill.style.width && barFill.style.width !== '0%') return;
+          if (barFill) barFill.style.width = '45%';
+          if (meta) meta.innerHTML = '<span>Gönderiliyor… ' + mb(f.size) + ' MB</span><b>45%</b>';
+        }, 500);
         await API.upload(path, f, (loaded, total) => {
+          clearInterval(ftick);
           const pct = total ? Math.round((loaded / total) * 100) : 0;
           if (barFill) barFill.style.width = pct + '%';
           if (meta) meta.innerHTML = '<span>' + mb(loaded) + ' MB / ' + mb(total) + ' MB</span><b>' + pct + '%</b>';
