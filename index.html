@@ -535,6 +535,12 @@ html[data-theme="dark"] .um-drop-head strong{color:#eaf1f8}
 html[data-theme="dark"] .um-item{color:#b7c6d6}
 html[data-theme="dark"] .um-item:hover{background:rgba(94,230,242,.12);color:#5ee6f2}
 html[data-theme="dark"] .um-sep{background:#25333f}
+
+/* yukleme ilerlemesi */
+.up-bar{height:7px;border-radius:6px;background:#e3eaf2;overflow:hidden;margin-top:9px}
+.up-bar>i{display:block;height:100%;width:0;border-radius:6px;background:linear-gradient(90deg,#12b8c8,#0d8fa0);transition:width .18s ease}
+.up-meta{display:flex;justify-content:space-between;font-size:11.5px;color:#5d6b7c;margin-top:5px;font-variant-numeric:tabular-nums}
+.up-meta b{color:#0d8fa0}
 </style>
 </head>
 <body>
@@ -1988,6 +1994,17 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
     const btn = $('#addSubmit');
     btn.disabled = true;
     btn.textContent = 'Yükleniyor…';
+    let bar = $('#addProgBar'), meta = $('#addProgMeta');
+    if (!bar) {
+      bar = document.createElement('div'); bar.className = 'up-bar'; bar.id = 'addProgBar';
+      meta = document.createElement('div'); meta.className = 'up-meta'; meta.id = 'addProgMeta';
+      const anchor = $('#addError');
+      if (anchor && anchor.parentNode) { anchor.parentNode.insertBefore(bar, anchor); anchor.parentNode.insertBefore(meta, anchor); }
+    }
+    bar.style.display = 'block'; meta.style.display = 'flex';
+    let totals = picked.reduce((a, x) => a + x.file.size, 0);
+    let done = 0;
+    const mb = (b) => (b / 1048576).toFixed(1);
     try {
       const tags = $('#fTags').value.split(',').map((t) => t.trim()).filter(Boolean);
       const rows = await API.rest('projects', {
@@ -2012,7 +2029,15 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
         const path = projectId + '/' + Date.now() + '-' + safe;
         btn.textContent = 'Dosya yükleniyor… (' + safe + ')';
         try {
-          await API.upload(path, p.file);
+          const base = done;
+          await API.upload(path, p.file, (loaded, total) => {
+            const cur = base + loaded;
+            const pct = totals ? Math.round((cur / totals) * 100) : 0;
+            bar.querySelector('i').style.width = pct + '%';
+            meta.innerHTML = '<span>' + mb(cur) + ' MB / ' + mb(totals) + ' MB</span><b>' + pct + '%</b>';
+            btn.textContent = pct + '% yükleniyor…';
+          });
+          done += p.file.size;
           await API.rest('files', {
             json: { project_id: projectId, platform: p.platform, name: p.file.name, storage_path: path, size: p.file.size }
           });
@@ -2035,6 +2060,8 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
     } finally {
       btn.disabled = false;
       btn.textContent = 'Projeyi Yayınla';
+      if (bar) bar.style.display = 'none';
+      if (meta) meta.style.display = 'none';
     }
   });
 
@@ -2076,6 +2103,8 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
               '<input id="addFileInput" type="file" style="flex:1;min-width:180px;font-size:13px" />' +
               '<button class="btn btn-primary btn-sm" type="button" id="addFileBtn">Yükle</button>' +
             '</div>' +
+            '<div class="up-bar" id="addFileBar" style="display:none"><i></i></div>' +
+            '<div class="up-meta" id="addFileMeta" style="display:none"><span>0 MB / 0 MB</span><b>0%</b></div>' +
             '<div class="form-error is-hidden" id="addFileErr" style="margin-top:10px"></div>' +
           '</div>'
         ) : '') +
@@ -2135,10 +2164,20 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
       const platform = $('#addFilePlatform').value;
       btn.disabled = true;
       btn.textContent = 'Yükleniyor…';
+      const bar = $('#addFileBar'), meta = $('#addFileMeta');
+      const barFill = bar ? bar.querySelector('i') : null;
+      if (bar) bar.style.display = 'block';
+      if (meta) meta.style.display = 'flex';
+      const mb = (b) => (b / 1048576).toFixed(1);
       try {
         const safe = f.name.replace(/[^\w.\-]+/g, '_');
         const path = p.id + '/' + Date.now() + '-' + safe;
-        await API.upload(path, f);
+        await API.upload(path, f, (loaded, total) => {
+          const pct = total ? Math.round((loaded / total) * 100) : 0;
+          if (barFill) barFill.style.width = pct + '%';
+          if (meta) meta.innerHTML = '<span>' + mb(loaded) + ' MB / ' + mb(total) + ' MB</span><b>' + pct + '%</b>';
+          btn.textContent = pct + '% yüklendi…';
+        });
         const rows = await API.rest('files', {
           json: { project_id: p.id, platform: platform, name: f.name, storage_path: path, size: f.size }
         });
@@ -2155,6 +2194,8 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
       } finally {
         btn.disabled = false;
         btn.textContent = 'Yükle';
+        if (bar) bar.style.display = 'none';
+        if (meta) meta.style.display = 'none';
       }
     });
   }
