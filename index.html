@@ -1631,8 +1631,37 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
   async function loadMe() {
     state.user = null;
     try {
+      // 0) yerel oturum var mı? varsa doğrudan Worker'dan profili çek
+      let raw = null;
+      try { raw = JSON.parse(localStorage.getItem('alora.session.v2') || sessionStorage.getItem('alora.session.v2') || 'null'); } catch (e0) {}
+      if (raw && raw.access_token) {
+        try {
+          const r = await fetch((window.AloraAPI ? window.AloraAPI.PROXY_URL : 'https://alora-bridge.bold-yew-bb8.workers.dev') + '/auth/user', {
+            headers: {
+              'x-alora-key': (window.AloraAPI ? window.AloraAPI.PUBLIC_TOKEN : '41ca9eb5f3a5747a2a6a5c7c9c9a46ddc205eca7274db5ae'),
+              'x-alora-token': raw.access_token
+            },
+            cache: 'no-store'
+          });
+          if (r.ok) {
+            const d = await r.json();
+            const pr = d.profile || {};
+            if (d.user) {
+              state.user = {
+                id: d.user.id,
+                email: d.user.email || '',
+                username: pr.username || (d.user.email || '').split('@')[0],
+                full_name: pr.full_name || '',
+                role: pr.role || 'uye',
+                banned: !!pr.banned
+              };
+            }
+          }
+        } catch (e1) {}
+      }
+
       // 1) yeni kimlik modülü (alora-auth.js)
-      if (window.AloraAuth && typeof window.AloraAuth.me === 'function') {
+      if (!state.user && window.AloraAuth && typeof window.AloraAuth.me === 'function') {
         const s = await window.AloraAuth.me();
         if (s && s.user) {
           const pr = s.profile || {};
@@ -2164,6 +2193,14 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
       const platform = $('#addFilePlatform').value;
       btn.disabled = true;
       btn.textContent = 'Yükleniyor…';
+      // yükleme öncesi oturumu tazele
+      try { if (window.AloraAuth && window.AloraAuth.me) await window.AloraAuth.me(); } catch (e0) {}
+      const rawSess = (() => { try { return JSON.parse(localStorage.getItem('alora.session.v2') || sessionStorage.getItem('alora.session.v2') || 'null'); } catch (e) { return null; } })();
+      if (!rawSess || !rawSess.access_token) {
+        err.textContent = 'Oturumunuz sona ermiş. Lütfen çıkış yapıp yeniden giriş yapın.';
+        err.classList.remove('is-hidden');
+        return;
+      }
       const bar = $('#addFileBar'), meta = $('#addFileMeta');
       const barFill = bar ? bar.querySelector('i') : null;
       if (bar) bar.style.display = 'block';
