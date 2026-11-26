@@ -579,16 +579,6 @@ html[data-theme="dark"] .um-sep{background:#25333f}
       </a>
       <a class="btn btn-primary btn-sm" href="kayit.html" id="signupBtn">Üye Ol</a>
 
-      <div class="user-chip is-hidden" id="userChip">
-        <span class="uc-avatar" id="ucAvatar">Y</span>
-        <span class="uc-main">
-          <strong id="ucName">Yetkili</strong>
-          <small id="ucRole">yönetici</small>
-        </span>
-        <button class="uc-out" type="button" id="logoutBtn" title="Çıkış yap" aria-label="Çıkış yap">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 17l5-5-5-5"/><path d="M20 12H9"/><path d="M12 20H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h6"/></svg>
-        </button>
-      </div>
     </nav>
   </div>
 </header>
@@ -1474,7 +1464,20 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
     const add = e.target.closest('[data-open-add]');
     const close = e.target.closest('[data-close-modal]');
     if (open) { e.preventDefault(); window.openModal('loginModal'); return; }
-    if (add) { e.preventDefault(); window.openModal('addModal'); return; }
+    if (add) {
+      e.preventDefault();
+      // giriş yoksa ya da yetkisizse giriş modalına yönlendir
+      const u = window.__aloraUser || state.user;
+      const staff = !!(u && (u.role === 'admin' || u.role === 'yetkili'));
+      if (!staff) {
+        window.openModal('loginModal');
+        const le = $('#loginError');
+        if (le && u) { le.textContent = 'Proje eklemek için yetkili hesabıyla giriş yapın.'; le.classList.remove('is-hidden'); }
+        return;
+      }
+      window.openModal('addModal');
+      return;
+    }
     if (close) { e.preventDefault(); window.closeModals(); }
   });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') window.closeModals(); });
@@ -1585,17 +1588,14 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
 
   /* ---------------- oturum ---------------- */
   async function paintUser() {
-    const chip = $('#userChip');
     const loginBtn = $('#loginBtn');
-    if (!chip || !loginBtn) return;
+    const signupBtn = $('#signupBtn');
+    const staff = !!(state.user && (state.user.role === 'admin' || state.user.role === 'yetkili'));
     if (state.user) {
-      chip.classList.remove('is-hidden');
-      loginBtn.classList.add('is-hidden');
-      $('#ucName').textContent = (state.user && (state.user.full_name || state.user.username)) || '';
-      $('#ucRole').textContent = state.user.role === 'admin' ? 'yönetici' : 'yetkili';
-      $('#ucAvatar').textContent = initials((state.user && (state.user.full_name || state.user.username)) || '?');
-      $('#addProjectBtn').classList.remove('is-hidden');
-      $('#heroAddBtn').classList.remove('is-hidden');
+      if (loginBtn) loginBtn.classList.add('is-hidden');
+      if (signupBtn) signupBtn.classList.add('is-hidden');
+      if ($('#addProjectBtn')) $('#addProjectBtn').classList.remove('is-hidden');
+      if ($('#heroAddBtn')) $('#heroAddBtn').classList.remove('is-hidden');
       $('#emptyLoginBtn').textContent = 'Yeni Proje Ekle';
       $('#emptyLoginBtn').setAttribute('data-open-add', '');
       $('#emptyLoginBtn').removeAttribute('data-open-login');
@@ -1606,10 +1606,9 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
         if (/Yetkili/i.test(b.textContent || '')) b.textContent = 'Yeni Proje Ekle';
       });
     } else {
-      chip.classList.add('is-hidden');
-      loginBtn.classList.remove('is-hidden');
-      $('#addProjectBtn').classList.add('is-hidden');
-      $('#heroAddBtn').classList.add('is-hidden');
+      if (loginBtn) loginBtn.classList.remove('is-hidden');
+      if ($('#addProjectBtn')) $('#addProjectBtn').classList.add('is-hidden');
+      /* hero düğmesi her zaman görünür: giriş yoksa giriş modalını açar */
       $('#emptyLoginBtn').textContent = 'Yetkili Girişi';
       $('#emptyLoginBtn').setAttribute('data-open-login', '');
       $('#emptyLoginBtn').removeAttribute('data-open-add');
@@ -1692,6 +1691,10 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
       closeModals();
       toast('Hoş geldiniz, ' + (me.full_name || me.username));
       loadProjects();
+      // yetkili ise doğrudan proje ekleme formunu aç
+      if (me.role === 'admin' || me.role === 'yetkili') {
+        setTimeout(() => window.openModal('addModal'), 220);
+      }
     } catch (e2) {
       const msg = String((e2 && e2.message) || '');
       err.textContent =
