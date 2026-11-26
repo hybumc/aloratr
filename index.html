@@ -1385,45 +1385,63 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
   const SUPABASE_URL = 'https://mwmeqcdjeyuflkobezby.supabase.co';
 
   // Indirme: dogrudan Supabase public storage (anahtar gerekmez, herkese acik)
-  function publicUrl(path) {
-    return SUPABASE_URL + '/storage/v1/object/public/' + BUCKET + '/' + path.split('/').map(encodeURIComponent).join('/');
+  function publicUrl(path, parts) {
+    if (parts && parts > 1) {
+      var nm = path.split('/').pop().split('-').slice(1).join('-') || path.split('/').pop();
+      return PROXY_URL + '/filechunks/' + path.split('/').map(encodeURIComponent).join('/') + '?parts=' + parts + '&name=' + encodeURIComponent(nm);
+    }
+    return PROXY_URL + '/file/' + path.split('/').map(encodeURIComponent).join('/');
   }
 
-  function upload(path, file, onProgress) {
+  var CHUNK = 40 * 1024 * 1024;
+
+  function putChunk(urlPath, blob, onProgress) {
     session = readSession();
-    // v2 anahtarindan da kurtarmayi dene
-    if (!session || !session.access_token) {
-      try {
-        var v2 = localStorage.getItem('alora.session.v2') || sessionStorage.getItem('alora.session.v2');
-        if (v2) { var s2 = JSON.parse(v2); if (s2 && s2.access_token) { session = s2; writeSession(s2); } }
-      } catch (e) {}
-    }
     if (!session || !session.access_token) {
       return Promise.reject(new Error('Oturum bulunamadı. Lütfen tekrar giriş yapın.'));
     }
     return new Promise(function (resolve, reject) {
-      var url = PROXY_URL + '/upload/' + path.split('/').map(encodeURIComponent).join('/');
       var xhr = new XMLHttpRequest();
-      xhr.open('POST', url, true);
+      xhr.open('PUT', PROXY_URL + urlPath, true);
       xhr.setRequestHeader('x-alora-key', PUBLIC_TOKEN);
       xhr.setRequestHeader('x-alora-token', session.access_token);
-      xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+      xhr.setRequestHeader('Content-Type', 'application/octet-stream');
       if (typeof onProgress === 'function') {
         xhr.upload.onprogress = function (ev) {
           if (ev.lengthComputable) onProgress(ev.loaded, ev.total);
         };
       }
       xhr.onload = function () {
-        if (xhr.status >= 200 && xhr.status < 300) { resolve(path); return; }
-        var msg = 'Dosya yüklenemedi (' + xhr.status + ')';
+        if (xhr.status >= 200 && xhr.status < 300) { resolve(true); return; }
+        var msg = 'Parça yüklenemedi (' + xhr.status + ')';
         try { var jj = JSON.parse(xhr.responseText); msg = jj.error || jj.message || msg; } catch (e) {}
         reject(new Error(msg));
       };
-      xhr.onerror = function () { reject(new Error('Bağlantı hatası — dosya yüklenemedi.')); };
-      xhr.ontimeout = function () { reject(new Error('Yükleme zaman aşımına uğradı.')); };
-      xhr.send(file);
+      xhr.onerror = function () { reject(new Error('Bağlantı hatası — parça yüklenemedi.')); };
+      xhr.send(blob);
     });
   }
+
+  // Büyük dosyaları 40 MB'lık parçalara bölerek yükler
+  async function uploadFile(path, file, onProgress) {
+    var parts = Math.ceil(file.size / CHUNK);
+    if (parts <= 1) return upload(path, file, onProgress);
+    var sentBase = 0;
+    for (var i = 1; i <= parts; i++) {
+      var start = (i - 1) * CHUNK;
+      var end = Math.min(file.size, start + CHUNK);
+      var blob = file.slice(start, end);
+      var base = sentBase;
+      await putChunk('/upload/' + path.split('/').map(encodeURIComponent).join('/') + '.part' + i, blob, function (loaded) {
+        if (onProgress) onProgress(base + loaded, file.size);
+      });
+      sentBase += blob.size;
+      if (onProgress) onProgress(sentBase, file.size);
+    }
+    return { parts: parts, storagePath: path };
+  }
+
+  function upload(path, file, onProgress) {
 
   async function remove(path) {
     session = readSession();
@@ -1452,7 +1470,7 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
   window.AloraAPI = {
     PROXY_URL, BUCKET,
     rest, signIn, signOut, currentUser, profile,
-    upload, remove, publicUrl, bump,
+    upload, uploadFile, remove, publicUrl, bump,
     hasSession: () => !!session,
     sessionUser: () => (session ? session.user : null)
   };
@@ -1886,7 +1904,7 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
       const tags = (p.tags || []).slice(0, 4).map((t) => '<span class="tag">' + esc(t) + '</span>').join('');
       const first = (p.files || [])[0];
       const dl = first
-        ? '<a class="btn btn-primary btn-sm" href="' + esc(API.publicUrl(first.storage_path)) + '" data-dl="' + first.id + '" target="_blank" rel="noopener">İndir</a>'
+        ? '<a class="btn btn-primary btn-sm" href="' + esc(API.publicUrl(first.storage_path, first.parts)) + '" data-dl="' + first.id + '" target="_blank" rel="noopener">İndir</a>'
         : '<button class="btn btn-secondary btn-sm is-disabled" type="button" disabled>Dosya yok</button>';
       const anim = reduce ? '' : 'style="animation:panelIn .5s cubic-bezier(.2,.8,.3,1) ' + (i * 55) + 'ms both"';
       return '' +
@@ -2104,7 +2122,7 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
             meta.innerHTML = '<span>' + mb(approx) + ' MB / ' + mb(totals) + ' MB</span><b>' + pct + '%</b>';
             btn.textContent = 'Gönderiliyor… ' + mb(approx) + ' MB';
           }, 400);
-          await API.upload(path, p.file, (loaded, total) => {
+          const upRes = await API.uploadFile(path, p.file, (loaded, total) => {
             if (loaded > 0) sawProgress = true;
             const cur = base + loaded;
             const pct = totals ? Math.round((cur / totals) * 100) : 0;
@@ -2115,7 +2133,14 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
           clearInterval(fakeTick);
           done += p.file.size;
           await API.rest('files', {
-            json: { project_id: projectId, platform: p.platform, name: p.file.name, storage_path: path, size: p.file.size }
+            json: {
+              project_id: projectId,
+              platform: p.platform,
+              name: p.file.name,
+              storage_path: path,
+              size: p.file.size,
+              parts: (upRes && upRes.parts) || 1
+            }
           });
           uploaded.push(safe);
         } catch (upErr) {
@@ -2156,7 +2181,7 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
         platformBadge(f.platform) +
         '<div class="dl-main"><div class="dl-name">' + esc(f.name) + '</div>' +
           '<div class="dl-sub">' + (f.sizeText || fmtBytes(f.size)) + ' · ' + (f.downloads || 0) + ' indirme</div></div>' +
-        '<a class="btn btn-primary btn-sm" href="' + esc(API.publicUrl(f.storage_path)) + '" data-dl="' + f.id + '" target="_blank" rel="noopener">İndir</a>' +
+        '<a class="btn btn-primary btn-sm" href="' + esc(API.publicUrl(f.storage_path, f.parts)) + '" data-dl="' + f.id + '" target="_blank" rel="noopener">İndir</a>' +
         (isStaff() ? '<button class="btn btn-icon" type="button" data-delfile="' + f.id + '" title="Dosyayı sil" style="width:34px;height:34px">✕</button>' : '') +
       '</div>'
     ).join('');
@@ -2261,7 +2286,7 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
           if (barFill) barFill.style.width = '45%';
           if (meta) meta.innerHTML = '<span>Gönderiliyor… ' + mb(f.size) + ' MB</span><b>45%</b>';
         }, 500);
-        await API.upload(path, f, (loaded, total) => {
+        const upRes2 = await API.uploadFile(path, f, (loaded, total) => {
           clearInterval(ftick);
           const pct = total ? Math.round((loaded / total) * 100) : 0;
           if (barFill) barFill.style.width = pct + '%';
@@ -2269,7 +2294,7 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
           btn.textContent = pct + '% yüklendi…';
         });
         const rows = await API.rest('files', {
-          json: { project_id: p.id, platform: platform, name: f.name, storage_path: path, size: f.size }
+          json: { project_id: p.id, platform: platform, name: f.name, storage_path: path, size: f.size, parts: (upRes2 && upRes2.parts) || 1 }
         });
         const row = Array.isArray(rows) ? rows[0] : rows;
         p.files = p.files || [];
