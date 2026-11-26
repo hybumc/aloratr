@@ -1940,7 +1940,15 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
     e.preventDefault();
     const err = $('#addError');
     err.classList.add('is-hidden');
-    if (!state.user) { err.textContent = 'Yetkili girişi gerekli.'; err.classList.remove('is-hidden'); return; }
+    if (!state.user) {
+      try { const me2 = await loadMe(); if (me2) state.user = me2; } catch (e0) {}
+    }
+    const who0 = state.user || window.__aloraUser;
+    if (!who0) { err.textContent = 'Yetkili girişi gerekli.'; err.classList.remove('is-hidden'); return; }
+    if (who0.role !== 'admin' && who0.role !== 'yetkili') {
+      err.textContent = 'Yetkiniz yok. Proje eklemek için yetkili ya da yönetici hesabı gerekir.';
+      err.classList.remove('is-hidden'); return;
+    }
 
     const name = $('#fName').value.trim();
     const desc = $('#fDesc').value.trim();
@@ -1967,7 +1975,7 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
           version: $('#fVersion').value.trim() || '1.0.0',
           status: $('#fStatus').value,
           release_notes: $('#fNotes').value,
-          created_by: state.user.id,
+          created_by: who0.id,
           author: (state.user && (state.user.full_name || state.user.username)) || 'Yetkili'
         }
       });
