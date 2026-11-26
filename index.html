@@ -1087,6 +1087,9 @@ html[data-theme="dark"] .um-sep{background:#25333f}
 <div class="toast-wrap" id="toasts" aria-live="polite"></div>
 
 
+<script src="alora-api.js"></script>
+<script src="alora-auth.js"></script>
+<script src="user-menu.js"></script>
 <script>
 /* tema düğmesi — erken ve garantili bağlama */
 document.addEventListener("click", function (e) {
@@ -1588,9 +1591,9 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
     if (state.user) {
       chip.classList.remove('is-hidden');
       loginBtn.classList.add('is-hidden');
-      $('#ucName').textContent = state.user.full_name || state.user.username;
+      $('#ucName').textContent = (state.user && (state.user.full_name || state.user.username)) || '';
       $('#ucRole').textContent = state.user.role === 'admin' ? 'yönetici' : 'yetkili';
-      $('#ucAvatar').textContent = initials(state.user.full_name || state.user.username);
+      $('#ucAvatar').textContent = initials((state.user && (state.user.full_name || state.user.username)) || '?');
       $('#addProjectBtn').classList.remove('is-hidden');
       $('#heroAddBtn').classList.remove('is-hidden');
       $('#emptyLoginBtn').textContent = 'Yeni Proje Ekle';
@@ -1621,22 +1624,49 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
   }
 
   async function loadMe() {
+    state.user = null;
     try {
-      const u = await API.currentUser();
-      if (!u) { state.user = null; }
-      else {
-        const p = await API.profile(u.id);
-        state.user = {
-          id: u.id,
-          email: u.email,
-          username: (p && p.username) || (u.email || '').split('@')[0],
-          full_name: (p && p.full_name) || '',
-          role: (p && p.role) || 'yetkili'
-        };
+      // 1) yeni kimlik modülü (alora-auth.js)
+      if (window.AloraAuth && typeof window.AloraAuth.me === 'function') {
+        const s = await window.AloraAuth.me();
+        if (s && s.user) {
+          const pr = s.profile || {};
+          state.user = {
+            id: s.user.id,
+            email: s.user.email || '',
+            username: pr.username || (s.user.email || '').split('@')[0],
+            full_name: pr.full_name || '',
+            role: pr.role || 'uye',
+            banned: !!pr.banned
+          };
+        }
+      }
+      // 2) eski API (Supabase oturumu varsa)
+      if (!state.user) {
+        const u = await API.currentUser();
+        if (u) {
+          let p = null;
+          try { p = await API.profile(u.id); } catch (e) { p = null; }
+          state.user = {
+            id: u.id,
+            email: u.email || '',
+            username: (p && p.username) || (u.email || '').split('@')[0],
+            full_name: (p && p.full_name) || '',
+            role: (p && p.role) || 'uye',
+            banned: !!(p && p.banned)
+          };
+        }
       }
     } catch (e) { state.user = null; }
+
+    if (state.user && state.user.banned) {
+      toast('Hesabınız askıya alınmış.', 'error');
+      state.user = null;
+    }
     window.__aloraUser = state.user;
+    window.__aloraStaff = !!(state.user && (state.user.role === 'admin' || state.user.role === 'yetkili'));
     paintUser();
+    return state.user;
   }
 
   const loginForm = $('#loginForm');
@@ -1651,11 +1681,16 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
       let who = $('#lgUser').value.trim();
       // kullanıcı adı yazıldıysa e-postaya çevir
       if (who && who.indexOf('@') === -1) who = who.toLowerCase() + '@alora.app';
-      await API.signIn(who, $('#lgPass').value);
-      await loadMe();
+      if (window.AloraAuth && window.AloraAuth.signIn) {
+        await window.AloraAuth.signIn(who, $('#lgPass').value);
+      } else {
+        await API.signIn(who, $('#lgPass').value);
+      }
+      const me = await loadMe();
+      if (!me) throw new Error('Giriş yapıldı ama profil okunamadı. Sayfayı yenileyin.');
       loginForm.reset();
       closeModals();
-      toast('Hoş geldiniz, ' + (state.user.full_name || state.user.username));
+      toast('Hoş geldiniz, ' + (me.full_name || me.username));
       loadProjects();
     } catch (e2) {
       err.textContent = e2.message === 'Invalid login credentials'
@@ -1927,7 +1962,7 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
           status: $('#fStatus').value,
           release_notes: $('#fNotes').value,
           created_by: state.user.id,
-          author: state.user.full_name || state.user.username
+          author: (state.user && (state.user.full_name || state.user.username)) || 'Yetkili'
         }
       });
       const project = Array.isArray(rows) ? rows[0] : rows;
@@ -2270,6 +2305,5 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
 })();
 
 </script>
-<script src="user-menu.js"></script>
 </body>
 </html>
