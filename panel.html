@@ -125,7 +125,7 @@
   var API = window.AloraAuth;
   var state = { me: null, profile: null, tab: 'ozet', data: {} };
   var $ = function (s, r) { return (r || document).querySelector(s); };
-  var $ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+  var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
 
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -182,7 +182,7 @@
   function setTab(tab) {
     if (!TITLES[tab]) tab = 'ozet';
     state.tab = tab;
-    $('.side .nav[data-tab]').forEach(function (a) {
+    $$('.side .nav[data-tab]').forEach(function (a) {
       a.classList.toggle('on', a.getAttribute('data-tab') === tab);
     });
     var t = TITLES[tab];
@@ -498,24 +498,24 @@
   }
 
   function bind() {
-    $('[data-role]').forEach(function (sel) {
+    $$('[data-role]').forEach(function (sel) {
       sel.addEventListener('change', async function () {
         if (!confirm('Rolü "' + API.roleLabel(sel.value) + '" olarak değiştirmek istiyor musunuz?')) { render(); return; }
-        try { await API.call('/admin/role', { method: 'POST', body: { user_id: sel.getAttribute('data-role'), p_role: sel.value } }); }
+        try { await API.call('/admin/role', { method: 'POST', body: { user_id: sel.getAttribute('data-role'), role: sel.value } }); }
         catch (e) { alert(e.message); }
         render();
       });
     });
-    $('[data-ban]').forEach(function (b) {
+    $$('[data-ban]').forEach(function (b) {
       b.addEventListener('click', async function () {
         var banned = b.getAttribute('data-banned') === '1';
         if (!confirm(banned ? 'Bu üyenin erişimini açmak istiyor musunuz?' : 'Bu üyeyi askıya almak istiyor musunuz?')) return;
-        try { await API.call('/admin/ban', { method: 'POST', body: { user_id: b.getAttribute('data-ban'), p_banned: !banned } }); }
+        try { await API.call('/admin/ban', { method: 'POST', body: { user_id: b.getAttribute('data-ban'), banned: !banned } }); }
         catch (e) { alert(e.message); }
         render();
       });
     });
-    $('[data-delproj]').forEach(function (b) {
+    $$('[data-delproj]').forEach(function (b) {
       b.addEventListener('click', async function () {
         if (!confirm('Bu proje kalıcı olarak silinsin mi?')) return;
         try { await API.call('/rest/projects?id=eq.' + b.getAttribute('data-delproj'), { method: 'DELETE' }); }
@@ -537,7 +537,7 @@
     $('#meAv').textContent = initials(name);
     $('#meRole').textContent = API.roleLabel(p.role);
 
-    $('.side .nav[data-tab]').forEach(function (a) {
+    $$('.side .nav[data-tab]').forEach(function (a) {
       a.addEventListener('click', function (e) { e.preventDefault(); location.hash = a.getAttribute('data-tab'); });
     });
     window.addEventListener('hashchange', function () { setTab((location.hash || '#ozet').slice(1)); });
