@@ -1896,7 +1896,7 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
     },
     db: function () {
       return timed(function () {
-        return fetch(BASE + '/rest/projects?select=id&limit=0', { cache: 'no-store', headers: { 'x-alora-key': KEY } })
+        return fetch(BASE + '/rest/projects?select=id&limit=1', { cache: 'no-store', headers: { 'x-alora-key': KEY } })
           .then(function (r) { return r.ok; });
       });
     },
