@@ -17,15 +17,15 @@
     } catch (e) { return null; }
   }
 
-  function write(sess, remember) {
-    const store = remember ? localStorage : sessionStorage;
+  function write(sess) {
     try {
       if (sess) {
-        store.setItem(SKEY, JSON.stringify(sess));
-        (remember ? sessionStorage : localStorage).removeItem(SKEY);
+        const raw = JSON.stringify(sess);
+        localStorage.setItem(SKEY, raw);
+        try { sessionStorage.setItem(SKEY, raw); } catch (e0) {}
       } else {
         localStorage.removeItem(SKEY);
-        sessionStorage.removeItem(SKEY);
+        try { sessionStorage.removeItem(SKEY); } catch (e0) {}
       }
     } catch (e) {}
   }
@@ -133,10 +133,26 @@
   }
 
   async function me() {
-    const sess = read();
+    let sess = read();
     if (!sess || !sess.access_token) return null;
+
+    // token süresi dolmuşsa önce yenile
+    if (sess.expires_at && sess.expires_at < Date.now() && sess.refresh_token) {
+      try {
+        const r = await call('/auth/refresh', { noAuth: true, body: { refresh_token: sess.refresh_token } });
+        sess = Object.assign({}, sess, {
+          access_token: r.access_token,
+          refresh_token: r.refresh_token || sess.refresh_token,
+          user: r.user || sess.user,
+          expires_at: Date.now() + (r.expires_in || 3600) * 1000
+        });
+        write(sess);
+      } catch (e0) { /* yenilenemedi, mevcut token ile devam */ }
+    }
+
     try {
       const data = await call('/auth/user');
+      if (!data || !data.user) return null;
       return { session: sess, user: data.user, profile: data.profile };
     } catch (e) {
       if (e.status === 401 && sess.refresh_token) {
@@ -148,8 +164,7 @@
             user: r.user || sess.user,
             expires_at: Date.now() + (r.expires_in || 3600) * 1000
           });
-          write(next, !!localStorage.getItem(SKEY));
-          // yenilenen token ile profili tekrar oku
+          write(next);
           try {
             const pdata = await call('/auth/user');
             return { session: next, user: pdata.user || next.user, profile: pdata.profile || null };
@@ -158,6 +173,7 @@
           }
         } catch (e2) { write(null); return null; }
       }
+      // ağ hatası vb: oturumu silme
       return null;
     }
   }
