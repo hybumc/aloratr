@@ -603,7 +603,8 @@ html[data-theme="dark"] .um-sep{background:#25333f}
         Giriş
       </a>
       <a class="btn btn-primary btn-sm" href="kayit.html" id="signupBtn">Üye Ol</a>
-
+      <a class="btn btn-ghost is-hidden" href="ayarlar.html" id="navSettings">Ayarlar</a>
+      <button class="btn btn-ghost is-hidden" type="button" id="navLogout">Çıkış</button>
     </nav>
   </div>
 </header>
@@ -1787,8 +1788,12 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
     const signupBtn = $('#signupBtn');
     const staff = !!(state.user && (state.user.role === 'admin' || state.user.role === 'yetkili'));
     if (state.user) {
-      if (loginBtn) loginBtn.classList.add('is-hidden');
-      if (signupBtn) signupBtn.classList.add('is-hidden');
+      /* giris/kayit dugmeleri HER ZAMAN gorunur kalir; kullanici cikis yapip hesap degistirebilsin */
+      if (loginBtn) { loginBtn.classList.remove('is-hidden'); loginBtn.innerHTML = 'Hesap'; loginBtn.href = 'hesabim.html'; }
+      if (signupBtn) { signupBtn.classList.add('is-hidden'); }
+      const ns = $('#navSettings'), nl = $('#navLogout');
+      if (ns) ns.classList.remove('is-hidden');
+      if (nl) nl.classList.remove('is-hidden');
       if ($('#addProjectBtn')) $('#addProjectBtn').classList.remove('is-hidden');
       if ($('#heroAddBtn')) $('#heroAddBtn').classList.remove('is-hidden');
       $('#emptyLoginBtn').textContent = 'Yeni Proje Ekle';
@@ -1801,7 +1806,11 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
         if (/Yetkili/i.test(b.textContent || '')) b.textContent = 'Yeni Proje Ekle';
       });
     } else {
-      if (loginBtn) loginBtn.classList.remove('is-hidden');
+      if (loginBtn) { loginBtn.classList.remove('is-hidden'); loginBtn.innerHTML = 'Giriş'; loginBtn.href = 'giris.html'; }
+      if (signupBtn) { signupBtn.classList.remove('is-hidden'); signupBtn.textContent = 'Üye Ol'; signupBtn.href = 'kayit.html'; }
+      const ns2 = $('#navSettings'), nl2 = $('#navLogout');
+      if (ns2) ns2.classList.add('is-hidden');
+      if (nl2) nl2.classList.add('is-hidden');
       if ($('#addProjectBtn')) $('#addProjectBtn').classList.add('is-hidden');
       /* hero düğmesi her zaman görünür: giriş yoksa giriş modalını açar */
       $('#emptyLoginBtn').textContent = 'Yetkili Girişi';
@@ -2770,6 +2779,15 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
   if (yearEl) yearEl.textContent = new Date().getFullYear();
 
   /* ---------------- başlat ---------------- */
+  const navLogoutBtn = $('#navLogout');
+  if (navLogoutBtn) navLogoutBtn.addEventListener('click', async () => {
+    try { if (window.AloraAuth && window.AloraAuth.signOut) await window.AloraAuth.signOut(); } catch (e) {}
+    try { localStorage.removeItem('alora.session.v2'); localStorage.removeItem('alora.session'); sessionStorage.removeItem('alora.session.v2'); sessionStorage.removeItem('alora.session'); } catch (e) {}
+    window.__aloraUser = null; window.__aloraStaff = false;
+    toast('Çıkış yapıldı');
+    location.reload();
+  });
+
   bindEditModal();
 
   (async function init() {
