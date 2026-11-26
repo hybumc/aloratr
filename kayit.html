@@ -3,109 +3,195 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<meta name="theme-color" content="#12b8c8" />
+<meta name="theme-color" content="#0a1420" />
 <title>Üye Ol — ALORA</title>
 <meta name="description" content="ALORA'ya ücretsiz üye olun: projeleri indirin, yorum yapın, öneri bırakın." />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230d1b2a'/%3E%3Cpath d='M32 12 51 51h-9.4L32 31 22.4 51H13Z' fill='%2312b8c8'/%3E%3C/svg%3E" />
-<link rel="stylesheet" href="assets/alora-ui.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="assets/auth.css" />
 </head>
 <body>
-<div class="page">
 
-  <header class="topbar">
-    <div class="topbar-in">
-      <a class="brand" href="index.html">
-        <span class="brand-mark">
+<div class="auth-shell">
+
+  <aside class="auth-aside">
+    <div class="aside-top">
+      <a class="aside-logo" href="index.html">
+        <span class="aside-mark">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 21 21h-4.6L12 11.6 7.6 21H3Z"/></svg>
+        </span>
+        ALORA
+      </a>
+    </div>
+
+    <div class="aside-mid">
+      <h2>Ücretsiz üye ol,<br><em>topluluğa katıl.</em></h2>
+      <p>Projelere yorum yap, puan ver, yeni uygulama öner. Üyelik tamamen ücretsiz — kredi kartı istemiyoruz.</p>
+
+      <ul class="aside-list">
+        <li>
+          <span class="ic"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+          Sınırsız indirme ve yorum
+        </li>
+        <li>
+          <span class="ic"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+          Kendi önerilerinizi iletin
+        </li>
+        <li>
+          <span class="ic"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+          Profilinizi kişiselleştirin
+        </li>
+      </ul>
+
+      <div class="aside-stats">
+        <div><b>30 sn</b><small>kayıt süresi</small></div>
+        <div><b>0 ₺</b><small>üyelik ücreti</small></div>
+      </div>
+    </div>
+
+    <div class="aside-foot">
+      <span>© 2026 ALORA</span>
+      <a href="index.html">Siteye dön</a>
+      <a href="LICENSE">Lisans</a>
+    </div>
+  </aside>
+
+  <main class="auth-main">
+    <div class="auth-top">
+      <a class="mob-logo" href="index.html">
+        <span class="aside-mark" style="width:30px;height:30px;border-radius:9px">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 21 21h-4.6L12 11.6 7.6 21H3Z"/></svg>
         </span>
         ALORA
       </a>
-      <div class="top-actions">
-        <a class="btn btn-ghost hide-sm" href="index.html">Siteye dön</a>
-        <a class="btn btn-secondary btn-sm" href="giris.html">Giriş yap</a>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="icon-btn" type="button" data-theme-toggle aria-label="Tema değiştir">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
+        </button>
+        <a class="btn btn-ghost" href="giris.html">Giriş yap</a>
       </div>
     </div>
-  </header>
 
-  <main class="page-main">
-    <div class="auth-wrap">
-      <div class="wrap-narrow">
+    <div class="auth-center">
+      <div class="auth-box">
 
         <div class="auth-head">
-          <h1>ALORA'ya katıl</h1>
-          <p>Ücretsiz üye olun. Projeleri indirin, yorum yapın, kendi önerilerinizi paylaşın.</p>
+          <span class="eyebrow">Ücretsiz kayıt</span>
+          <h1>Hesap oluştur</h1>
+          <p>30 saniyede hazır. E-posta doğrulaması yok, hemen kullanmaya başlayın.</p>
         </div>
 
-        <div class="card auth-card">
-          <div class="alert alert-err" id="errBox"></div>
-          <div class="alert alert-ok" id="okBox"></div>
+        <div class="card">
+          <div class="steps" aria-hidden="true">
+            <span class="on" id="s1"></span><span id="s2"></span><span id="s3"></span>
+          </div>
+
+          <div class="alert alert-err" id="errBox">
+            <span class="ai"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg></span>
+            <span id="errText"></span>
+          </div>
+          <div class="alert alert-ok" id="okBox">
+            <span class="ai"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+            <span id="okText"></span>
+          </div>
 
           <form id="signupForm" novalidate autocomplete="on">
-            <div class="field">
+            <div class="field" id="fName">
               <label for="fullName">Ad soyad</label>
-              <input id="fullName" name="name" type="text" autocomplete="name" placeholder="Berat Yıldız" required />
+              <div class="inp has-ic">
+                <span class="ic">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg>
+                </span>
+                <input id="fullName" name="name" type="text" autocomplete="name" placeholder="Berat Yıldız" required />
+              </div>
+              <span class="err">Adınızı yazın</span>
             </div>
 
-            <div class="field">
+            <div class="field" id="fUser">
               <label for="username">Kullanıcı adı</label>
-              <input id="username" name="username" type="text" autocomplete="username"
-                     autocapitalize="none" spellcheck="false" placeholder="berat" required />
-              <small>3–20 karakter; harf, rakam, nokta ve alt çizgi</small>
+              <div class="inp has-ic">
+                <span class="ic" style="font-size:15px;font-weight:600">@</span>
+                <input id="username" name="username" type="text" autocomplete="username"
+                       autocapitalize="none" spellcheck="false" placeholder="berat" required />
+              </div>
+              <small class="hint">3–20 karakter; harf, rakam, nokta ve alt çizgi</small>
+              <span class="err">En az 3 karakter olmalı</span>
             </div>
 
-            <div class="field">
+            <div class="field" id="fMail">
               <label for="email">E-posta</label>
-              <input id="email" name="email" type="email" autocomplete="email"
-                     autocapitalize="none" spellcheck="false" placeholder="ornek@eposta.com" required />
+              <div class="inp has-ic">
+                <span class="ic">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m3.5 7 8.5 6 8.5-6"/></svg>
+                </span>
+                <input id="email" name="email" type="email" autocomplete="email"
+                       autocapitalize="none" spellcheck="false" placeholder="ornek@eposta.com" required />
+              </div>
+              <span class="err">Geçerli bir e-posta adresi girin</span>
             </div>
 
-            <div class="field">
+            <div class="field" id="fPw">
               <label for="password">Şifre</label>
-              <div class="pw-wrap">
+              <div class="inp has-ic">
+                <span class="ic">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><rect x="4" y="10" width="16" height="10" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+                </span>
                 <input id="password" name="password" type="password" autocomplete="new-password"
                        placeholder="En az 6 karakter" required />
-                <button class="pw-eye" type="button" data-pw="password" aria-label="Şifreyi göster">
-                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                </button>
+                <span class="suffix">
+                  <button class="pw-eye" type="button" data-pw="password" aria-label="Şifreyi göster">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                  </button>
+                </span>
               </div>
-              <div style="display:flex;gap:4px;margin-top:8px" id="pwBars">
-                <i style="height:3px;flex:1;border-radius:2px;background:var(--line)"></i>
-                <i style="height:3px;flex:1;border-radius:2px;background:var(--line)"></i>
-                <i style="height:3px;flex:1;border-radius:2px;background:var(--line)"></i>
-                <i style="height:3px;flex:1;border-radius:2px;background:var(--line)"></i>
-              </div>
-              <small id="pwHint">Büyük harf, rakam ve simge eklemek güvenliği artırır</small>
+              <div class="pw-meter" id="pwMeter"><i></i><i></i><i></i><i></i></div>
+              <div class="pw-label" id="pwLabel">En az 6 karakter</div>
+              <span class="err">Şifre en az 6 karakter olmalı</span>
             </div>
 
-            <div class="field">
+            <div class="field" id="fPw2">
               <label for="password2">Şifre (tekrar)</label>
-              <input id="password2" type="password" autocomplete="new-password" placeholder="••••••••" required />
+              <div class="inp has-ic">
+                <span class="ic">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>
+                </span>
+                <input id="password2" type="password" autocomplete="new-password" placeholder="••••••••" required />
+                <span class="suffix">
+                  <button class="pw-eye" type="button" data-pw="password2" aria-label="Şifreyi göster">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                  </button>
+                </span>
+              </div>
+              <span class="err">Şifreler uyuşmuyor</span>
             </div>
 
-            <label class="check" style="margin-bottom:18px">
+            <label class="check" id="fTerms" style="margin:4px 0 18px">
               <input type="checkbox" id="terms" />
               <span><a href="LICENSE" target="_blank">Kullanım koşullarını</a> ve gizlilik politikasını okudum, kabul ediyorum.</span>
             </label>
 
-            <button class="btn btn-primary btn-block" type="submit" id="submitBtn">Hesap oluştur</button>
+            <button class="btn btn-primary btn-block" type="submit" id="submitBtn">
+              Hesap oluştur
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </button>
           </form>
 
-          <p class="form-note">
-            Zaten üye misiniz? <a href="giris.html">Giriş yapın</a>
-          </p>
+          <p class="foot-note">Zaten üye misiniz? <a href="giris.html">Giriş yapın</a></p>
         </div>
 
-        <p class="form-note" style="margin-top:18px">
-          Üyelik ücretsizdir. Proje yüklemek için ayrıca yetkili onayı gerekir.
+        <p class="foot-note" style="margin-top:14px">
+          Proje yüklemek için ayrıca yetkili onayı gerekir.
         </p>
 
       </div>
     </div>
-  </main>
 
-  <footer class="site-foot">
-    © 2026 ALORA — Proje Platformu · <a href="index.html">Gizlilik</a> · <a href="LICENSE">Lisans</a>
-  </footer>
+    <footer class="site-foot">
+      © 2026 ALORA — Proje Platformu · <a href="index.html">Gizlilik</a> · <a href="LICENSE">MIT Lisansı</a>
+    </footer>
+  </main>
 
 </div>
 
@@ -114,30 +200,51 @@
 <script>
 (function () {
   'use strict';
-
   var errBox = document.getElementById('errBox');
   var okBox = document.getElementById('okBox');
+  var errText = document.getElementById('errText');
+  var okText = document.getElementById('okText');
   var form = document.getElementById('signupForm');
   var btn = document.getElementById('submitBtn');
+  var BTN_HTML = btn.innerHTML;
 
-  function show(el, msg) {
+  function show(box, el, msg) {
     errBox.classList.remove('show'); okBox.classList.remove('show');
     if (!msg) return;
-    el.textContent = msg;
-    el.classList.add('show');
+    el.textContent = msg; box.classList.add('show');
+  }
+  function mark(id, bad) {
+    var el = document.getElementById(id);
+    if (el) el.classList.toggle('bad', !!bad);
   }
 
-  // parola gücü
-  var bars = document.querySelectorAll('#pwBars i');
-  var COLORS = ['#e5484d', '#f5a623', '#f5d623', '#17b26a'];
-  document.getElementById('password').addEventListener('input', function () {
-    var s = AloraUI.strength(this.value);
-    bars.forEach(function (b, i) {
-      b.style.background = i < s ? COLORS[Math.max(0, s - 1)] : 'var(--line)';
-    });
+  // güç göstergesi
+  var meter = document.querySelectorAll('#pwMeter i');
+  var pwLabel = document.getElementById('pwLabel');
+  var COLORS = ['#e5484d', '#f5a623', '#2fbf71', '#0fb8c9'];
+  var LABELS = ['Çok zayıf', 'Zayıf', 'İyi', 'Güçlü'];
+
+  function updateStrength(pw) {
+    var s = AloraUI.strength(pw);
+    meter.forEach(function (b, i) { b.style.background = i < s ? COLORS[Math.max(0, s - 1)] : 'var(--line)'; });
+    if (!pw) { pwLabel.textContent = 'En az 6 karakter'; pwLabel.style.color = 'var(--muted)'; }
+    else { pwLabel.textContent = LABELS[Math.max(0, s - 1)] || 'Çok zayıf'; pwLabel.style.color = COLORS[Math.max(0, s - 1)]; }
+
+    // adım göstergesi
+    var done = 0;
+    if (document.getElementById('fullName').value.trim().length > 1) done++;
+    if (document.getElementById('username').value.trim().length >= 3) done++;
+    if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(document.getElementById('email').value.trim())) done++;
+    document.getElementById('s1').classList.toggle('on', done >= 1);
+    document.getElementById('s2').classList.toggle('on', done >= 2);
+    document.getElementById('s3').classList.toggle('on', done >= 3 && s >= 1);
+  }
+
+  document.getElementById('password').addEventListener('input', function () { updateStrength(this.value); });
+  ['fullName', 'username', 'email'].forEach(function (id) {
+    document.getElementById(id).addEventListener('input', function () { updateStrength(document.getElementById('password').value); });
   });
 
-  // kullanıcı adı: sadece izinli karakterler
   document.getElementById('username').addEventListener('input', function () {
     this.value = this.value.replace(/[^a-zA-Z0-9._]/g, '').slice(0, 20).toLowerCase();
   });
@@ -151,32 +258,41 @@
     var pw2 = document.getElementById('password2').value;
     var terms = document.getElementById('terms').checked;
 
-    if (fullName.length < 2) { show(errBox, 'Adınızı yazın'); return; }
-    if (username.length < 3) { show(errBox, 'Kullanıcı adı en az 3 karakter olmalı'); return; }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { show(errBox, 'Geçerli bir e-posta adresi girin'); return; }
-    if (pw.length < 6) { show(errBox, 'Şifre en az 6 karakter olmalı'); return; }
-    if (pw !== pw2) { show(errBox, 'Şifreler birbiriyle uyuşmuyor'); return; }
-    if (!terms) { show(errBox, 'Devam etmek için koşulları kabul edin'); return; }
+    mark('fName', fullName.length < 2);
+    mark('fUser', username.length < 3);
+    mark('fMail', !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email));
+    mark('fPw', pw.length < 6);
+    mark('fPw2', pw !== pw2 || !pw2);
+    document.getElementById('fTerms').classList.toggle('bad', !terms);
+
+    if (fullName.length < 2) return show(errBox, errText, 'Adınızı yazın');
+    if (username.length < 3) return show(errBox, errText, 'Kullanıcı adı en az 3 karakter olmalı');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return show(errBox, errText, 'Geçerli bir e-posta adresi girin');
+    if (pw.length < 6) return show(errBox, errText, 'Şifre en az 6 karakter olmalı');
+    if (pw !== pw2) return show(errBox, errText, 'Şifreler birbiriyle uyuşmuyor');
+    if (!terms) return show(errBox, errText, 'Devam etmek için koşulları kabul edin');
 
     btn.disabled = true;
     btn.innerHTML = '<span class="spin"></span> Hesap oluşturuluyor…';
-    show(null);
+    show();
 
     try {
       var r = await AloraAuth.signUp(email, pw, username, fullName);
       if (r.needConfirm) {
-        show(okBox, 'Hesabınız oluşturuldu. E-postanıza gelen doğrulama bağlantısına tıklayın, sonra giriş yapın.');
+        show(okBox, okText, 'Hesabınız oluşturuldu. E-postanıza gelen doğrulama bağlantısına tıklayın.');
         btn.textContent = 'E-posta gönderildi';
         setTimeout(function () { location.href = 'giris.html'; }, 4000);
       } else {
+        btn.innerHTML = '<span class="spin"></span> Yönlendiriliyor…';
         location.replace('hesabim.html');
       }
     } catch (err) {
       var m = err.message || 'Kayıt yapılamadı';
       if (/already/i.test(m)) m = 'Bu e-posta veya kullanıcı adı zaten kullanılıyor';
-      show(errBox, m);
+      if (/bağlantı|Yetkisiz/i.test(m)) m = 'Sunucuya ulaşılamadı. Sayfayı yenileyip tekrar deneyin.';
+      show(errBox, errText, m);
       btn.disabled = false;
-      btn.textContent = 'Hesap oluştur';
+      btn.innerHTML = BTN_HTML;
     }
   });
 })();
