@@ -1831,7 +1831,10 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
       test: async () => {
         const t = performance.now();
         const base = (window.AloraAPI && window.AloraAPI.PROXY_URL) || '';
-        const res = await fetch(base + '/health', { cache: 'no-store' });
+        const res = await fetch(base + '/health', {
+          cache: 'no-store',
+          headers: { 'x-alora-key': (window.AloraAPI && window.AloraAPI.PUBLIC_TOKEN) || '' }
+        });
         const ms = Math.round(performance.now() - t);
         const j = await res.json().catch(() => ({}));
         return { ok: res.ok && j.ok === true, ms };
@@ -1844,7 +1847,7 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
       icon: 'db',
       test: async () => {
         const t = performance.now();
-        const rows = await window.AloraAPI.rest('projects?select=id&limit=1');
+        const rows = await window.AloraAPI.rest('projects?select=id&limit=0');
         return { ok: Array.isArray(rows), ms: Math.round(performance.now() - t) };
       }
     },
