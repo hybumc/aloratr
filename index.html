@@ -1253,8 +1253,11 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
   const SESSION_KEY = 'alora.session';
 
   function readSession() {
-    try { return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); }
-    catch (e) { return null; }
+    try {
+      var v2 = localStorage.getItem('alora.session.v2') || sessionStorage.getItem('alora.session.v2');
+      if (v2) { var s2 = JSON.parse(v2); if (s2 && s2.access_token) return s2; }
+      return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+    } catch (e) { return null; }
   }
   function writeSession(s) {
     try {
@@ -1264,7 +1267,17 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
   }
 
   let session = readSession();
-  if (session && session.expires_at && session.expires_at * 1000 < Date.now()) session = null;
+  // expires_at ms cinsinden tutulur; eski kayitlarla uyum icin iki bicimi de destekle
+  function expired(s) {
+    if (!s || !s.expires_at) return false;
+    var exp = s.expires_at;
+    if (exp < 1e12) exp = exp * 1000;
+    return exp < Date.now() - 30000;
+  }
+  if (session && expired(session)) {
+    // süresi geçmiş olsa da token'ı tut; worker 401 derse yenilenir
+    session = session;
+  }
 
   function qs(obj) {
     const p = [];
@@ -1279,10 +1292,10 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
   /* ---- proxy üzerinden REST ---- */
   async function rest(path, opts) {
     const o = opts || {};
+    session = readSession();
     const headers = Object.assign({
-      'x-alora-key': PUBLIC_TOKEN,
-      'x-alora-token': session ? session.access_token : ''
-    }, o.headers || {});
+      'x-alora-key': PUBLIC_TOKEN
+    }, session && session.access_token ? { 'x-alora-token': session.access_token } : {}, o.headers || {});
     if (o.json !== undefined) {
       headers['Content-Type'] = 'application/json';
       headers['Prefer'] = o.prefer || 'return=representation';
@@ -1376,26 +1389,44 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
     return SUPABASE_URL + '/storage/v1/object/public/' + BUCKET + '/' + path.split('/').map(encodeURIComponent).join('/');
   }
 
-  async function upload(path, file) {
-    const res = await fetch(PROXY_URL + '/upload/' + path.split('/').map(encodeURIComponent).join('/'), {
-      method: 'POST',
-      headers: {
-        'x-alora-key': PUBLIC_TOKEN,
-        'x-alora-token': session ? session.access_token : '',
-        'Content-Type': file.type || 'application/octet-stream'
-      },
-      body: file
-    });
-    const txt = await res.text();
-    if (!res.ok) {
-      let msg = 'Dosya yüklenemedi (' + res.status + ')';
-      try { const j = JSON.parse(txt); msg = j.message || j.error || msg; } catch (e) {}
-      throw new Error(msg);
+  function upload(path, file, onProgress) {
+    session = readSession();
+    // v2 anahtarindan da kurtarmayi dene
+    if (!session || !session.access_token) {
+      try {
+        var v2 = localStorage.getItem('alora.session.v2') || sessionStorage.getItem('alora.session.v2');
+        if (v2) { var s2 = JSON.parse(v2); if (s2 && s2.access_token) { session = s2; writeSession(s2); } }
+      } catch (e) {}
     }
-    return path;
+    if (!session || !session.access_token) {
+      return Promise.reject(new Error('Oturum bulunamadı. Lütfen tekrar giriş yapın.'));
+    }
+    return new Promise(function (resolve, reject) {
+      var url = PROXY_URL + '/upload/' + path.split('/').map(encodeURIComponent).join('/');
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', url, true);
+      xhr.setRequestHeader('x-alora-key', PUBLIC_TOKEN);
+      xhr.setRequestHeader('x-alora-token', session.access_token);
+      xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+      if (typeof onProgress === 'function') {
+        xhr.upload.onprogress = function (ev) {
+          if (ev.lengthComputable) onProgress(ev.loaded, ev.total);
+        };
+      }
+      xhr.onload = function () {
+        if (xhr.status >= 200 && xhr.status < 300) { resolve(path); return; }
+        var msg = 'Dosya yüklenemedi (' + xhr.status + ')';
+        try { var jj = JSON.parse(xhr.responseText); msg = jj.error || jj.message || msg; } catch (e) {}
+        reject(new Error(msg));
+      };
+      xhr.onerror = function () { reject(new Error('Bağlantı hatası — dosya yüklenemedi.')); };
+      xhr.ontimeout = function () { reject(new Error('Yükleme zaman aşımına uğradı.')); };
+      xhr.send(file);
+    });
   }
 
   async function remove(path) {
+    session = readSession();
     try {
       await fetch(PROXY_URL + '/remove/' + path.split('/').map(encodeURIComponent).join('/'), {
         method: 'DELETE',
