@@ -335,6 +335,13 @@ end $$;
 notify pgrst, 'reload schema';
 
 -- ------------------------------------------------------------
+-- ------------------------------------------------------------
+-- 11b) PARÇALI DOSYA DESTEĞİ (50 MB üstü dosyalar için)
+-- ------------------------------------------------------------
+alter table public.files add column if not exists parts integer default 1;
+
+notify pgrst, 'reload schema';
+
 -- 12) MEVCUT ADMIN'İ KORU
 -- ------------------------------------------------------------
 update public.profiles set role = 'admin' where username = 'aloratr';
