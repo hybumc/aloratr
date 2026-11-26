@@ -229,7 +229,10 @@
     // proje platform dağılımı
     var plat = {};
     projects.forEach(function (p) {
-      var k = (p.platforms && p.platforms.length ? p.platforms[0] : p.platform) || 'diğer';
+      var arr = p.platforms;
+      var k = (Array.isArray(arr) && arr.length) ? arr[0]
+            : (typeof arr === 'string' && arr) ? arr
+            : 'diğer';
       plat[k] = (plat[k] || 0) + 1;
     });
     var platItems = Object.keys(plat).map(function (k) { return { label: k, value: plat[k] }; });
