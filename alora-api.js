@@ -145,27 +145,32 @@
     return SUPABASE_URL + '/storage/v1/object/public/' + BUCKET + '/' + path.split('/').map(encodeURIComponent).join('/');
   }
 
-  async function upload(path, file) {
+  function upload(path, file, onProgress) {
     session = readSession();
     if (!session || !session.access_token) {
-      throw new Error('Oturum bulunamadı. Lütfen tekrar giriş yapın.');
+      return Promise.reject(new Error('Oturum bulunamadı. Lütfen tekrar giriş yapın.'));
     }
-    const res = await fetch(PROXY_URL + '/upload/' + path.split('/').map(encodeURIComponent).join('/'), {
-      method: 'POST',
-      headers: {
-        'x-alora-key': PUBLIC_TOKEN,
-        'x-alora-token': session.access_token,
-        'Content-Type': file.type || 'application/octet-stream'
-      },
-      body: file
+    return new Promise(function (resolve, reject) {
+      var url = PROXY_URL + '/upload/' + path.split('/').map(encodeURIComponent).join('/');
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', url, true);
+      xhr.setRequestHeader('x-alora-key', PUBLIC_TOKEN);
+      xhr.setRequestHeader('x-alora-token', session.access_token);
+      xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+      xhr.upload.onprogress = function (ev) {
+        if (onProgress && ev.lengthComputable) onProgress(ev.loaded, ev.total);
+      };
+      xhr.onload = function () {
+        if (xhr.status >= 200 && xhr.status < 300) { resolve(path); return; }
+        var msg = 'Dosya yüklenemedi (' + xhr.status + ')';
+        try { var jj = JSON.parse(xhr.responseText); msg = jj.error || jj.message || msg; } catch (e) {}
+        reject(new Error(msg));
+      };
+      xhr.onerror = function () { reject(new Error('Bağlantı hatası — dosya yüklenemedi.')); };
+      xhr.ontimeout = function () { reject(new Error('Yükleme zaman aşımına uğradı.')); };
+      xhr.upload.onprogress = xhr.upload.onprogress;
+      xhr.send(file);
     });
-    const txt = await res.text();
-    if (!res.ok) {
-      let msg = 'Dosya yüklenemedi (' + res.status + ')';
-      try { const j = JSON.parse(txt); msg = j.message || j.error || msg; } catch (e) {}
-      throw new Error(msg);
-    }
-    return path;
   }
 
   async function remove(path) {
