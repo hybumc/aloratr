@@ -7,8 +7,8 @@
   'use strict';
 
   /* ---- derleme sırasında doldurulur ---- */
-  const PROXY_URL = '__PROXY_URL__';
-  const PUBLIC_TOKEN = '__PUBLIC_TOKEN__';
+  const PROXY_URL = 'https://alora-bridge.bold-yew-bb8.workers.dev';
+  const PUBLIC_TOKEN = '41ca9eb5f3a5747a2a6a5c7c9c9a46ddc205eca7274db5ae';
   const BUCKET = 'proje-dosyalari';
   const SESSION_KEY = 'alora.session';
 
