@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#12b8c8" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Hesabım — ALORA</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230d1b2a'/%3E%3Cpath d='M32 12 51 51h-9.4L32 31 22.4 51H13Z' fill='%2312b8c8'/%3E%3C/svg%3E" />
+<link rel="stylesheet" href="assets/alora-ui.css" />
+<style>
+  .prof-head{display:flex;align-items:center;gap:16px;margin-bottom:20px;flex-wrap:wrap}
+  .avatar{width:64px;height:64px;border-radius:20px;display:grid;place-items:center;font-size:26px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--brand),var(--brand-2));flex:0 0 auto}
+  .prof-head h1{font-size:21px;color:var(--ink)}
+  .prof-head p{margin:4px 0 0;font-size:13.5px;color:var(--muted)}
+  .kv{display:grid;grid-template-columns:1fr;gap:10px}
+  @media(min-width:560px){.kv{grid-template-columns:1fr 1fr}}
+  .kv div{background:var(--bg);border:1px solid var(--line);border-radius:11px;padding:11px 13px}
+  .kv small{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:650;margin-bottom:4px}
+  .kv b{font-size:13.5px;color:var(--ink);font-weight:600;word-break:break-word}
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="topbar">
+    <div class="topbar-in">
+      <a class="brand" href="index.html">
+        <span class="brand-mark"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 21 21h-4.6L12 11.6 7.6 21H3Z"/></svg></span>
+        ALORA
+      </a>
+      <div class="top-actions" data-user-slot></div>
+    </div>
+  </header>
+
+  <main class="page-main">
+    <div class="auth-wrap">
+      <div class="wrap-narrow" style="max-width:640px">
+        <div id="loading" class="card auth-card" style="text-align:center;color:var(--muted);font-size:14px">Yükleniyor…</div>
+
+        <div id="content" style="display:none">
+          <div class="prof-head">
+            <div class="avatar" id="avatar">B</div>
+            <div>
+              <h1 id="dispName">—</h1>
+              <p id="dispSub">—</p>
+            </div>
+          </div>
+
+          <div class="card auth-card" style="margin-bottom:16px">
+            <div class="alert alert-err" id="errBox"></div>
+            <div class="alert alert-ok" id="okBox"></div>
+
+            <h3 style="font-size:15px;margin-bottom:14px;color:var(--ink)">Hesap bilgileri</h3>
+            <div class="kv" style="margin-bottom:18px">
+              <div><small>Kullanıcı adı</small><b id="kvUser">—</b></div>
+              <div><small>E-posta</small><b id="kvMail">—</b></div>
+              <div><small>Rol</small><b id="kvRole">—</b></div>
+              <div><small>Üyelik tarihi</small><b id="kvDate">—</b></div>
+            </div>
+
+            <form id="profForm">
+              <div class="field">
+                <label for="fullName">Ad soyad</label>
+                <input id="fullName" type="text" placeholder="Berat Yıldız" />
+              </div>
+              <div class="field">
+                <label for="phone">Telefon (isteğe bağlı)</label>
+                <input id="phone" type="tel" placeholder="+90 5xx xxx xx xx" />
+              </div>
+              <div class="field">
+                <label for="bio">Hakkımda (isteğe bağlı)</label>
+                <textarea id="bio" rows="3" placeholder="Kendinizden kısaca bahsedin" style="resize:vertical"></textarea>
+              </div>
+              <button class="btn btn-primary btn-block" type="submit" id="saveBtn">Değişiklikleri kaydet</button>
+            </form>
+          </div>
+
+          <div class="card auth-card" style="margin-bottom:16px" id="staffBox" hidden>
+            <h3 style="font-size:15px;margin-bottom:10px;color:var(--ink)">Yetkili işlemleri</h3>
+            <p style="font-size:13.5px;color:var(--muted);margin:0 0 14px">Hesabınız yetkili. Kontrol panelinden proje ekleyip üyeleri yönetebilirsiniz.</p>
+            <a class="btn btn-primary btn-block" href="panel.html">Kontrol paneline git</a>
+          </div>
+
+          <button class="btn btn-danger btn-block" id="logoutBtn">Çıkış yap</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-foot">© 2026 ALORA — Proje Platformu · <a href="index.html">Gizlilik</a> · <a href="LICENSE">Lisans</a></footer>
+</div>
+
+<script src="assets/alora-ui.js"></script>
+<script src="alora-auth.js"></script>
+<script>
+(function () {
+  'use strict';
+  var errBox = document.getElementById('errBox');
+  var okBox = document.getElementById('okBox');
+  function show(el, msg) {
+    errBox.classList.remove('show'); okBox.classList.remove('show');
+    if (!msg) return;
+    el.textContent = msg; el.classList.add('show');
+  }
+  function fmtDate(d) {
+    if (!d) return '—';
+    return new Date(d).toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', year: 'numeric' });
+  }
+
+  (async function () {
+    var s = await AloraAuth.me();
+    if (!s || !s.user) { location.replace('giris.html'); return; }
+    var p = s.profile || {};
+    var name = p.full_name || p.username || (s.user.email || '').split('@')[0];
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('content').style.display = 'block';
+    document.getElementById('avatar').textContent = (name || '?').charAt(0).toUpperCase();
+    document.getElementById('dispName').textContent = name;
+    document.getElementById('dispSub').textContent = '@' + (p.username || '') + ' · ' + AloraAuth.roleLabel(p.role);
+    document.getElementById('kvUser').textContent = '@' + (p.username || '—');
+    document.getElementById('kvMail').textContent = p.email || s.user.email || '—';
+    document.getElementById('kvRole').textContent = AloraAuth.roleLabel(p.role);
+    document.getElementById('kvDate').textContent = fmtDate(p.created_at);
+    document.getElementById('fullName').value = p.full_name || '';
+    document.getElementById('phone').value = p.phone || '';
+    document.getElementById('bio').value = p.bio || '';
+    if (AloraAuth.isStaff(p)) document.getElementById('staffBox').hidden = false;
+
+    document.getElementById('profForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      var btn = document.getElementById('saveBtn');
+      btn.disabled = true; btn.textContent = 'Kaydediliyor…';
+      try {
+        await AloraAuth.updateProfile({
+          full_name: document.getElementById('fullName').value.trim(),
+          phone: document.getElementById('phone').value.trim(),
+          bio: document.getElementById('bio').value.trim()
+        });
+        show(okBox, 'Bilgileriniz güncellendi.');
+        setTimeout(function () { location.reload(); }, 900);
+      } catch (err) {
+        show(errBox, err.message || 'Kaydedilemedi');
+        btn.disabled = false; btn.textContent = 'Değişiklikleri kaydet';
+      }
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', async function () {
+      await AloraAuth.signOut();
+      location.replace('index.html');
+    });
+  })();
+})();
+</script>
+</body>
+</html>
