@@ -4,11 +4,8 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>ALORA — Proje Kütüphanesi</title>
-<meta name="description" content="ALORA proje kütüphanesi: yetkili ekip tarafından yayınlanan projeleri keşfedin, EXE ve APK dosyalarını indirin, yorum ve öneri bırakın." />
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2312b8c8'/%3E%3Cstop offset='.55' stop-color='%232f5fa8'/%3E%3Cstop offset='1' stop-color='%239a52b8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='%230d1b2a'/%3E%3Cpath d='M32 13 50 49H41L32 30 23 49H14Z' fill='url(%23g)'/%3E%3C/svg%3E" />
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<meta name="description" content="ALORA proje kütüphanesi: yetkili ekip tarafından yayınlanan projeleri keşfedin, indirin ve geri bildirim bırakın." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230d1b2a'/%3E%3Cpath d='M32 12 51 51h-9.4L32 31 22.4 51H13Z' fill='%2357c7d6'/%3E%3C/svg%3E" />
 <style>
 /* ALORA — stil dosyası */
 :root{
@@ -403,6 +400,17 @@ html[data-theme="dark"] .foot-bottom{border-top-color:#1a2733;color:#6f8194}
 html[data-theme="dark"] .hero-note,html[data-theme="dark"] .p-meta{color:#7a8c9e}
 html[data-theme="dark"] .toast{background:#152330;color:#eaf1f8}
 
+
+.legal-card{max-width:680px}
+.legal-body{max-height:64vh;overflow-y:auto;padding:4px 2px 2px;color:var(--ink-2);font-size:14.5px;line-height:1.75}
+.legal-body h4{margin:18px 0 6px;font-size:14.5px;color:var(--ink);font-weight:700}
+.legal-body p{margin:0 0 10px}
+.legal-body ul{margin:0 0 12px;padding-left:20px}
+.legal-body li{margin-bottom:6px}
+.legal-body a{color:#2b7fff;text-decoration:underline}
+.legal-note{margin-top:18px;padding-top:12px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+html[data-theme="dark"] .legal-body{color:#b9c6d3}
+html[data-theme="dark"] .legal-body h4{color:#e8eff6}
 </style>
 </head>
 <body>
@@ -704,189 +712,144 @@ html[data-theme="dark"] .toast{background:#152330;color:#eaf1f8}
   </div>
 </footer>
 
-<!-- GİRİŞ MODALI -->
-<div class="modal" id="loginModal" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
-  <div class="modal-back" data-close-modal></div>
-  <div class="modal-card" style="max-width:420px">
-    <div class="modal-head">
-      <div>
-        <h3 id="loginTitle">Yetkili girişi</h3>
-        <p>Proje eklemek için yetkili hesabınızla giriş yapın.</p>
-      </div>
-      <button class="btn btn-icon" type="button" aria-label="Kapat" data-close-modal style="width:34px;height:34px">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
-      </button>
-    </div>
-    <form id="loginForm" novalidate>
-      <div class="field">
-        <label for="lgUser">E-posta veya kullanıcı adı</label>
-        <input id="lgUser" type="text" autocomplete="username" placeholder="aloratr veya aloratr@alora.app" required />
-      </div>
-      <div class="field">
-        <label for="lgPass">Şifre</label>
-        <input id="lgPass" type="password" autocomplete="current-password" required />
-      </div>
-      <div class="form-error is-hidden" id="loginError"></div>
-      <div class="modal-foot">
-        <button class="btn btn-secondary btn-sm" type="button" data-close-modal>Vazgeç</button>
-        <button class="btn btn-primary btn-sm" type="submit" id="loginSubmit">Giriş Yap</button>
-      </div>
-      <div class="modal-note">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
-        <span>Hesabınız yok mu? Yönetici sizin için hesap açar. İndirmek için giriş gerekmez.</span>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- PROJE EKLEME MODALI -->
-<div class="modal" id="addModal" role="dialog" aria-modal="true" aria-labelledby="addTitle">
-  <div class="modal-back" data-close-modal></div>
-  <div class="modal-card" style="max-width:620px">
-    <div class="modal-head">
-      <div>
-        <h3 id="addTitle">Yeni proje ekle</h3>
-        <p>Projenin ne işe yaradığını yazın, EXE ve/veya APK dosyalarını yükleyin.</p>
-      </div>
-      <button class="btn btn-icon" type="button" aria-label="Kapat" data-close-modal style="width:34px;height:34px">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
-      </button>
-    </div>
-
-    <form id="projectForm" novalidate>
-      <div class="grid-2">
-        <div class="field">
-          <label for="fName">Proje adı *</label>
-          <input id="fName" type="text" placeholder="Örn. Saha Görüntü Analizi" required maxlength="80" />
-        </div>
-        <div class="field">
-          <label for="fVersion">Sürüm</label>
-          <input id="fVersion" type="text" placeholder="1.0.0" maxlength="24" />
-        </div>
-      </div>
-
-      <div class="field">
-        <label for="fDesc">Ne işe yarar? *</label>
-        <textarea id="fDesc" placeholder="Projenin amacını, kimlerin kullanacağını ve nasıl çalıştığını anlatın." maxlength="2000" style="min-height:92px"></textarea>
-      </div>
-
-      <div class="field">
-        <label for="fTags">Etiketler</label>
-        <input id="fTags" type="text" placeholder="görüntü işleme, yapay zeka, depo" />
-        <span class="hint">Virgülle ayırın (en fazla 6 etiket).</span>
-      </div>
-
-      <div class="field">
-        <label for="fStatus">Durum</label>
-        <select id="fStatus">
-          <option value="yayinda">Yayında (herkes görür)</option>
-          <option value="bakimda">Bakımda (uyarı etiketiyle görünür)</option>
-          <option value="arsiv">Arşiv (yalnızca yetkililer görür)</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <label for="fNotes">Güncelleme notları</label>
-        <textarea id="fNotes" maxlength="4000" placeholder="- Yeni özellikler&#10;- Hata düzeltmeleri" style="min-height:80px"></textarea>
-        <span class="hint">Ziyaretçiler proje detayında görür.</span>
-      </div>
-
-      <div class="uploads">
-        <div class="upload-row">
-          <div class="upload-label">
-            <span class="os-badge win">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M3 5.5 10.5 4.4v7.2H3Zm9 -1.4L21 3v8.6h-9ZM3 12.6h7.5v7.1L3 18.6Zm9 0h9V21l-9-1.3Z"/></svg>
-            </span>
-            <div><strong>Windows (EXE)</strong><small>.exe, .msi, .zip</small></div>
-          </div>
-          <label class="drop" for="fileWindows">
-            <strong>Dosya seç</strong> veya sürükle
-            <span class="fname" data-fname="windows"></span>
-            <input id="fileWindows" type="file" class="is-hidden" data-platform="windows" accept=".exe,.msi,.zip,.msix,.7z" />
-          </label>
-        </div>
-
-        <div class="upload-row">
-          <div class="upload-label">
-            <span class="os-badge and">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M7 9h10a1 1 0 0 1 1 1v8a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2v-8a1 1 0 0 1 1-1Zm-3 .5a1.5 1.5 0 0 1 3 0v6a1.5 1.5 0 0 1-3 0Zm13 0a1.5 1.5 0 0 1 3 0v6a1.5 1.5 0 0 1-3 0ZM9 19.5h1.5v2a1.5 1.5 0 0 1-3 0Zm4.5 0H15v2a1.5 1.5 0 0 1-3 0ZM7.2 7.5c.3-1.8 1.6-3.2 3.3-3.8l-.8-1.4.7-.4.9 1.5a6.4 6.4 0 0 1 3.4 0l.9-1.5.7.4-.8 1.4c1.7.6 3 2 3.3 3.8Zm3-1.4a.7.7 0 1 0 0-1.4.7.7 0 0 0 0 1.4Zm3.6 0a.7.7 0 1 0 0-1.4.7.7 0 0 0 0 1.4Z"/></svg>
-            </span>
-            <div><strong>Android (APK)</strong><small>.apk, .aab, .zip</small></div>
-          </div>
-          <label class="drop" for="fileAndroid">
-            <strong>Dosya seç</strong> veya sürükle
-            <span class="fname" data-fname="android"></span>
-            <input id="fileAndroid" type="file" class="is-hidden" data-platform="android" accept=".apk,.aab,.zip" />
-          </label>
-        </div>
-
-        <div class="upload-row">
-          <div class="upload-label">
-            <span class="os-badge oth">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 7.5A2 2 0 0 1 5.5 5.5h4l2 2.5h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2Z"/></svg>
-            </span>
-            <div><strong>Diğer</strong><small>Linux, macOS, doküman…</small></div>
-          </div>
-          <label class="drop" for="fileOther">
-            <strong>Dosya seç</strong> veya sürükle
-            <span class="fname" data-fname="other"></span>
-            <input id="fileOther" type="file" class="is-hidden" data-platform="other" />
-          </label>
-        </div>
-      </div>
-
-      <div class="form-error is-hidden" id="addError"></div>
-      <div class="modal-foot">
-        <button class="btn btn-secondary btn-sm" type="button" data-close-modal>Vazgeç</button>
-        <button class="btn btn-primary btn-sm" type="submit" id="addSubmit">Projeyi Yayınla</button>
-      </div>
-      <div class="modal-note">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
-        <span>Dosyalar sunucudaki veritabanına ve disk alanına kaydedilir. Tek dosya sınırı 200 MB.</span>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- PROJE DETAY MODALI -->
-<div class="modal" id="detailModal" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
-  <div class="modal-back" data-close-modal></div>
-  <div class="modal-card detail-card">
-    <div class="modal-head">
-      <div>
-        <h3 id="detailTitle">Proje</h3>
-        <p id="detailMeta"></p>
-      </div>
-      <button class="btn btn-icon" type="button" aria-label="Kapat" data-close-modal style="width:34px;height:34px">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
-      </button>
-    </div>
-    <div id="detailBody"></div>
-
-    <div class="detail-comments">
-      <h4>Yorumlar ve öneriler <span id="detailCommentCount" class="mini-count">0</span></h4>
-      <div id="commentList" class="comment-list"><p class="muted-small">Yükleniyor…</p></div>
-
-      <form id="commentForm" class="comment-form">
-        <div class="stars stars-sm" data-stars="detail" role="radiogroup" aria-label="Puan">
-          <button type="button" data-star="1" aria-label="1 yıldız">★</button>
-          <button type="button" data-star="2" aria-label="2 yıldız">★</button>
-          <button type="button" data-star="3" aria-label="3 yıldız">★</button>
-          <button type="button" data-star="4" aria-label="4 yıldız">★</button>
-          <button type="button" data-star="5" aria-label="5 yıldız">★</button>
-          <input type="hidden" class="rating-input" value="0" />
-        </div>
-        <input type="text" class="c-author" maxlength="40" placeholder="Adınız (isteğe bağlı)" />
-        <textarea class="c-body" maxlength="1200" placeholder="İşe yaradı mı? Ne geliştirilebilir?" required></textarea>
-        <button class="btn btn-primary btn-sm" type="submit">Yorumu Gönder</button>
-      </form>
-    </div>
-  </div>
-</div>
-
-<div class="toast-wrap" id="toasts" aria-live="polite"></div>
-
 <script>
+/* ============================================================
+   ALORA — sayfa içeriği: yasal metinler (Gizlilik, Koşullar,
+   Hakkımızda, İletişim, Lisans) + modal davranışları
+   ============================================================ */
+(function () {
+  'use strict';
+
+  const LEGAL = {
+    hakkimizda: {
+      title: 'Hakkımızda',
+      html:
+        '<p><strong>ALORA</strong>, yetkili ekiplerin kendi projelerini yayınladığı, herkesin indirip geri bildirim bıraktığı bir proje kütüphanesidir.</p>' +
+        '<p>Amacımız basit: aradığın programı bulmak, tek tıkla indirmek ve indirdiğin şeyin gerçekten ne olduğunu bilmek. Bu yüzden her projede açıklama, sürüm, güncelleme notu ve dosya boyutu görünür.</p>' +
+        '<h4>Kimler proje ekleyebilir?</h4>' +
+        '<p>Yalnızca yönetici tarafından tanımlanmış yetkili hesaplar. Ziyaretçiler giriş yapmadan tüm projeleri görüntüleyip indirebilir, yorum ve öneri bırakabilir.</p>' +
+        '<h4>Nasıl çalışır?</h4>' +
+        '<p>Proje bilgileri bir veritabanında, dosyalar güvenli bir depolama alanında tutulur. Site statik olarak yayınlanır; tarayıcın doğrudan veri servisine bağlanır.</p>'
+    },
+    gizlilik: {
+      title: 'Gizlilik Politikası',
+      html:
+        '<p>Bu sayfa, ALORA kullanılırken hangi verilerin işlendiğini açıklar.</p>' +
+        '<h4>Topladığımız veriler</h4>' +
+        '<ul>' +
+        '<li><strong>Yetkili hesapları:</strong> e-posta adresi ve şifre. Şifreler asla okunabilir şekilde saklanmaz, servis sağlayıcı tarafından geri döndürülemez biçimde şifrelenir.</li>' +
+        '<li><strong>Yorumlar:</strong> yazdığın görünen ad (boş bırakırsan "Ziyaretçi"), yorum metni, verdiğin puan ve tarih. Bu bilgiler proje sayfasında <em>herkese açık</em> görünür.</li>' +
+        '<li><strong>İndirme sayıları:</strong> hangi dosyanın kaç kez indirildiğine dair toplu sayaç. Kişisel kimlik bilgisi tutulmaz.</li>' +
+        '</ul>' +
+        '<h4>Çerezler ve yerel depolama</h4>' +
+        '<p>Reklam veya izleme çerezi kullanılmıyor. Tarayıcında yalnızca oturum bilgisi (giriş yaptıysan) ve tema tercihin saklanır. Bunları tarayıcı ayarlarından silebilirsin.</p>' +
+        '<h4>Verilerin saklandığı yer</h4>' +
+        '<p>Veritabanı ve dosyalar Supabase altyapısında (AB sunucuları) barındırılır. Site GitHub Pages üzerinden yayınlanır. Bu sağlayıcılar kendi gizlilik politikalarına tabidir.</p>' +
+        '<h4>Haklarınız</h4>' +
+        '<p>Yazdığın bir yorumun kaldırılmasını istersen iletişim bölümünden bize ulaş. Talebin makul süre içinde yerine getirilir.</p>' +
+        '<h4>Çocuklar</h4>' +
+        '<p>Platform 13 yaş altı kullanıcılardan bilerek veri toplamaz.</p>' +
+        '<p class="legal-note">Son güncelleme: 26 Kasım 2026</p>'
+    },
+    kosullar: {
+      title: 'Kullanım Koşulları',
+      html:
+        '<p>ALORA\'yı kullanarak aşağıdaki koşulları kabul etmiş olursun.</p>' +
+        '<h4>1. Hizmetin kapsamı</h4>' +
+        '<p>ALORA, yetkili kişilerin yüklediği yazılım dosyalarını listeleyen bir kütüphanedir. Dosyaların sahibi veya geliştiricisi değiliz; yalnızca yayınlandıkları alanı sağlıyoruz.</p>' +
+        '<h4>2. İndirilen dosyalar</h4>' +
+        '<p>Bir dosyayı indirip çalıştırmak tamamen senin sorumluluğundadır. Dosyaları kendi bilgisayarında, kendi antivirüs taramanla kontrol etmeni öneririz. Yüklenen bir dosyanın içeriğinden yükleyen yetkili sorumludur.</p>' +
+        '<h4>3. Yetkili hesapları</h4>' +
+        '<p>Proje ekleme hakkı yalnızca yönetici tarafından verilir. Hesabını başkasıyla paylaşamazsın; hesabın altında yapılan tüm işlemlerden sen sorumlusun.</p>' +
+        '<h4>4. Yasak içerik</h4>' +
+        '<p>Zararlı yazılım (virüs, fidye, casus yazılım), telif hakkı ihlali, kişisel veri sızdırma veya yasa dışı içerik yüklenemez. Tespit edilen içerik uyarı yapılmadan kaldırılır ve hesap kapatılır.</p>' +
+        '<h4>5. Yorumlar</h4>' +
+        '<p>Hakaret, spam ve reklam içeren yorumlar silinir. Yorumların herkese açık olduğunu unutma; kişisel bilgi yazma.</p>' +
+        '<h4>6. Sorumluluk sınırı</h4>' +
+        '<p>Hizmet "olduğu gibi" sunulur. Kesintisiz veya hatasız çalışacağı garanti edilmez. Veri kaybı, indirilen dosyadan doğan zarar veya hizmet kesintisinden doğan zararlar için sorumluluk kabul edilmez.</p>' +
+        '<h4>7. Değişiklikler</h4>' +
+        '<p>Bu koşullar güncellenebilir. Güncel sürüm her zaman bu sayfada yayınlanır.</p>' +
+        '<p class="legal-note">Son güncelleme: 26 Kasım 2026</p>'
+    },
+    iletisim: {
+      title: 'İletişim',
+      html:
+        '<p>Hata bildirimi, kaldırma talebi veya iş birliği için bize ulaşabilirsin.</p>' +
+        '<ul>' +
+        '<li><strong>E-posta:</strong> <a href="mailto:hybumc@proton.me">hybumc@proton.me</a></li>' +
+        '<li><strong>GitHub:</strong> <a href="https://github.com/hybumc" target="_blank" rel="noopener">github.com/hybumc</a></li>' +
+        '</ul>' +
+        '<h4>Hangi durumlarda yazmalısın?</h4>' +
+        '<ul>' +
+        '<li>Bir proje hatalı çalışıyorsa veya dosyası bozuksa</li>' +
+        '<li>Telif hakkı ihlali olduğunu düşündüğün bir dosya varsa</li>' +
+        '<li>Yorumunun kaldırılmasını istiyorsan</li>' +
+        '<li>Yetkili hesabı talep ediyorsan</li>' +
+        '</ul>' +
+        '<p>Ortalama yanıt süresi 2–3 iş günüdür.</p>'
+    },
+    lisans: {
+      title: 'Lisans',
+      html:
+        '<p>ALORA platformunun kendi arayüz ve kodları <strong>MIT Lisansı</strong> ile sunulur: kopyalayabilir, değiştirebilir ve kendi projenizde kullanabilirsiniz; tek şart telif bildirimini korumanızdır.</p>' +
+        '<h4>Yüklenen projeler ayrı lisanslıdır</h4>' +
+        '<p>Platform üzerinde listelenen her yazılım kendi lisansına sahiptir. Bir projeyi indirmek, onu yeniden dağıtma hakkı vermez. Projenin lisansı açıklamasında veya dosyası içindeki LICENSE dosyasında belirtilir.</p>' +
+        '<h4>Ticari markalar</h4>' +
+        '<p>Windows, Microsoft Corporation\'ın; Android, Google LLC\'nin tescilli markalarıdır. ALORA bu şirketlerle bağlantılı değildir.</p>' +
+        '<p class="legal-note">MIT License — Copyright (c) 2026 ALORA</p>'
+    }
+  };
+
+  function openLegal(key) {
+    const d = LEGAL[key];
+    if (!d) return;
+    let box = document.getElementById('legalModal');
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'legalModal';
+      box.className = 'modal';
+      box.innerHTML =
+        '<div class="modal-card legal-card" role="dialog" aria-modal="true" aria-labelledby="legalTitle">' +
+          '<div class="modal-head">' +
+            '<div><h3 id="legalTitle"></h3><p id="legalSub"></p></div>' +
+            '<button class="btn btn-icon" type="button" aria-label="Kapat" id="legalClose" style="width:34px;height:34px">' +
+              '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>' +
+            '</button>' +
+          '</div>' +
+          '<div class="legal-body" id="legalBody"></div>' +
+        '</div>';
+      document.body.appendChild(box);
+      box.addEventListener('click', (e) => {
+        if (e.target === box || e.target.closest('#legalClose')) {
+          box.classList.remove('open');
+          document.body.style.overflow = '';
+        }
+      });
+    }
+    document.getElementById('legalTitle').textContent = d.title;
+    document.getElementById('legalSub').textContent = 'ALORA — Proje Kütüphanesi';
+    document.getElementById('legalBody').innerHTML = d.html;
+    box.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    document.getElementById('legalBody').scrollTop = 0;
+  }
+
+  window.openLegal = openLegal;
+
+  document.addEventListener('click', (e) => {
+    const link = e.target.closest('[data-legal]');
+    if (link) { e.preventDefault(); openLegal(link.getAttribute('data-legal')); }
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      const box = document.getElementById('legalModal');
+      if (box && box.classList.contains('open')) { box.classList.remove('open'); document.body.style.overflow = ''; }
+    }
+  });
+})();
+
+
+
 /* ============================================================
    ALORA — Supabase istemcisi
    Güvenlik: bu dosya tarayıcıya gönderilmez. index.html içine
@@ -1076,6 +1039,7 @@ html[data-theme="dark"] .toast{background:#152330;color:#eaf1f8}
   };
 })();
 
+
 /* ============================================================
    ALORA — arayüz yardımcıları (modal, tema, toasts, efektler)
    ============================================================ */
@@ -1177,148 +1141,13 @@ html[data-theme="dark"] .toast{background:#152330;color:#eaf1f8}
   }
 })();
 
-/* ============================================================
-   ALORA — sayfa içeriği: yasal metinler (Gizlilik, Koşullar,
-   Hakkımızda, İletişim, Lisans) + modal davranışları
-   ============================================================ */
-(function () {
-  'use strict';
-
-  const LEGAL = {
-    hakkimizda: {
-      title: 'Hakkımızda',
-      html:
-        '<p><strong>ALORA</strong>, yetkili ekiplerin kendi projelerini yayınladığı, herkesin indirip geri bildirim bıraktığı bir proje kütüphanesidir.</p>' +
-        '<p>Amacımız basit: aradığın programı bulmak, tek tıkla indirmek ve indirdiğin şeyin gerçekten ne olduğunu bilmek. Bu yüzden her projede açıklama, sürüm, güncelleme notu ve dosya boyutu görünür.</p>' +
-        '<h4>Kimler proje ekleyebilir?</h4>' +
-        '<p>Yalnızca yönetici tarafından tanımlanmış yetkili hesaplar. Ziyaretçiler giriş yapmadan tüm projeleri görüntüleyip indirebilir, yorum ve öneri bırakabilir.</p>' +
-        '<h4>Nasıl çalışır?</h4>' +
-        '<p>Proje bilgileri bir veritabanında, dosyalar güvenli bir depolama alanında tutulur. Site statik olarak yayınlanır; tarayıcın doğrudan veri servisine bağlanır.</p>'
-    },
-    gizlilik: {
-      title: 'Gizlilik Politikası',
-      html:
-        '<p>Bu sayfa, ALORA kullanılırken hangi verilerin işlendiğini açıklar.</p>' +
-        '<h4>Topladığımız veriler</h4>' +
-        '<ul>' +
-        '<li><strong>Yetkili hesapları:</strong> e-posta adresi ve şifre. Şifreler asla okunabilir şekilde saklanmaz, servis sağlayıcı tarafından geri döndürülemez biçimde şifrelenir.</li>' +
-        '<li><strong>Yorumlar:</strong> yazdığın görünen ad (boş bırakırsan "Ziyaretçi"), yorum metni, verdiğin puan ve tarih. Bu bilgiler proje sayfasında <em>herkese açık</em> görünür.</li>' +
-        '<li><strong>İndirme sayıları:</strong> hangi dosyanın kaç kez indirildiğine dair toplu sayaç. Kişisel kimlik bilgisi tutulmaz.</li>' +
-        '</ul>' +
-        '<h4>Çerezler ve yerel depolama</h4>' +
-        '<p>Reklam veya izleme çerezi kullanılmıyor. Tarayıcında yalnızca oturum bilgisi (giriş yaptıysan) ve tema tercihin saklanır. Bunları tarayıcı ayarlarından silebilirsin.</p>' +
-        '<h4>Verilerin saklandığı yer</h4>' +
-        '<p>Veritabanı ve dosyalar Supabase altyapısında (AB sunucuları) barındırılır. Site GitHub Pages üzerinden yayınlanır. Bu sağlayıcılar kendi gizlilik politikalarına tabidir.</p>' +
-        '<h4>Haklarınız</h4>' +
-        '<p>Yazdığın bir yorumun kaldırılmasını istersen iletişim bölümünden bize ulaş. Talebin makul süre içinde yerine getirilir.</p>' +
-        '<h4>Çocuklar</h4>' +
-        '<p>Platform 13 yaş altı kullanıcılardan bilerek veri toplamaz.</p>' +
-        '<p class="legal-note">Son güncelleme: 26 Kasım 2026</p>'
-    },
-    kosullar: {
-      title: 'Kullanım Koşulları',
-      html:
-        '<p>ALORA\'yı kullanarak aşağıdaki koşulları kabul etmiş olursun.</p>' +
-        '<h4>1. Hizmetin kapsamı</h4>' +
-        '<p>ALORA, yetkili kişilerin yüklediği yazılım dosyalarını listeleyen bir kütüphanedir. Dosyaların sahibi veya geliştiricisi değiliz; yalnızca yayınlandıkları alanı sağlıyoruz.</p>' +
-        '<h4>2. İndirilen dosyalar</h4>' +
-        '<p>Bir dosyayı indirip çalıştırmak tamamen senin sorumluluğundadır. Dosyaları kendi bilgisayarında, kendi antivirüs taramanla kontrol etmeni öneririz. Yüklenen bir dosyanın içeriğinden yükleyen yetkili sorumludur.</p>' +
-        '<h4>3. Yetkili hesapları</h4>' +
-        '<p>Proje ekleme hakkı yalnızca yönetici tarafından verilir. Hesabını başkasıyla paylaşamazsın; hesabın altında yapılan tüm işlemlerden sen sorumlusun.</p>' +
-        '<h4>4. Yasak içerik</h4>' +
-        '<p>Zararlı yazılım (virüs, fidye, casus yazılım), telif hakkı ihlali, kişisel veri sızdırma veya yasa dışı içerik yüklenemez. Tespit edilen içerik uyarı yapılmadan kaldırılır ve hesap kapatılır.</p>' +
-        '<h4>5. Yorumlar</h4>' +
-        '<p>Hakaret, spam ve reklam içeren yorumlar silinir. Yorumların herkese açık olduğunu unutma; kişisel bilgi yazma.</p>' +
-        '<h4>6. Sorumluluk sınırı</h4>' +
-        '<p>Hizmet "olduğu gibi" sunulur. Kesintisiz veya hatasız çalışacağı garanti edilmez. Veri kaybı, indirilen dosyadan doğan zarar veya hizmet kesintisinden doğan zararlar için sorumluluk kabul edilmez.</p>' +
-        '<h4>7. Değişiklikler</h4>' +
-        '<p>Bu koşullar güncellenebilir. Güncel sürüm her zaman bu sayfada yayınlanır.</p>' +
-        '<p class="legal-note">Son güncelleme: 26 Kasım 2026</p>'
-    },
-    iletisim: {
-      title: 'İletişim',
-      html:
-        '<p>Hata bildirimi, kaldırma talebi veya iş birliği için bize ulaşabilirsin.</p>' +
-        '<ul>' +
-        '<li><strong>E-posta:</strong> <a href="mailto:hybumc@proton.me">hybumc@proton.me</a></li>' +
-        '<li><strong>GitHub:</strong> <a href="https://github.com/hybumc" target="_blank" rel="noopener">github.com/hybumc</a></li>' +
-        '</ul>' +
-        '<h4>Hangi durumlarda yazmalısın?</h4>' +
-        '<ul>' +
-        '<li>Bir proje hatalı çalışıyorsa veya dosyası bozuksa</li>' +
-        '<li>Telif hakkı ihlali olduğunu düşündüğün bir dosya varsa</li>' +
-        '<li>Yorumunun kaldırılmasını istiyorsan</li>' +
-        '<li>Yetkili hesabı talep ediyorsan</li>' +
-        '</ul>' +
-        '<p>Ortalama yanıt süresi 2–3 iş günüdür.</p>'
-    },
-    lisans: {
-      title: 'Lisans',
-      html:
-        '<p>ALORA platformunun kendi arayüz ve kodları <strong>MIT Lisansı</strong> ile sunulur: kopyalayabilir, değiştirebilir ve kendi projenizde kullanabilirsiniz; tek şart telif bildirimini korumanızdır.</p>' +
-        '<h4>Yüklenen projeler ayrı lisanslıdır</h4>' +
-        '<p>Platform üzerinde listelenen her yazılım kendi lisansına sahiptir. Bir projeyi indirmek, onu yeniden dağıtma hakkı vermez. Projenin lisansı açıklamasında veya dosyası içindeki LICENSE dosyasında belirtilir.</p>' +
-        '<h4>Ticari markalar</h4>' +
-        '<p>Windows, Microsoft Corporation\'ın; Android, Google LLC\'nin tescilli markalarıdır. ALORA bu şirketlerle bağlantılı değildir.</p>' +
-        '<p class="legal-note">MIT License — Copyright (c) 2026 ALORA</p>'
-    }
-  };
-
-  function openLegal(key) {
-    const d = LEGAL[key];
-    if (!d) return;
-    let box = document.getElementById('legalModal');
-    if (!box) {
-      box = document.createElement('div');
-      box.id = 'legalModal';
-      box.className = 'modal';
-      box.innerHTML =
-        '<div class="modal-card legal-card" role="dialog" aria-modal="true" aria-labelledby="legalTitle">' +
-          '<div class="modal-head">' +
-            '<div><h3 id="legalTitle"></h3><p id="legalSub"></p></div>' +
-            '<button class="btn btn-icon" type="button" aria-label="Kapat" id="legalClose" style="width:34px;height:34px">' +
-              '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>' +
-            '</button>' +
-          '</div>' +
-          '<div class="legal-body" id="legalBody"></div>' +
-        '</div>';
-      document.body.appendChild(box);
-      box.addEventListener('click', (e) => {
-        if (e.target === box || e.target.closest('#legalClose')) {
-          box.classList.remove('open');
-          document.body.style.overflow = '';
-        }
-      });
-    }
-    document.getElementById('legalTitle').textContent = d.title;
-    document.getElementById('legalSub').textContent = 'ALORA — Proje Kütüphanesi';
-    document.getElementById('legalBody').innerHTML = d.html;
-    box.classList.add('open');
-    document.body.style.overflow = 'hidden';
-    document.getElementById('legalBody').scrollTop = 0;
-  }
-
-  window.openLegal = openLegal;
-
-  document.addEventListener('click', (e) => {
-    const link = e.target.closest('[data-legal]');
-    if (link) { e.preventDefault(); openLegal(link.getAttribute('data-legal')); }
-  });
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      const box = document.getElementById('legalModal');
-      if (box && box.classList.contains('open')) { box.classList.remove('open'); document.body.style.overflow = ''; }
-    }
-  });
-})();
-
 /* ALORA — arayüz mantığı (Supabase sürümü) */
 (function () {
   'use strict';
 
   const API = window.AloraAPI;
-  const openModal = (id) => window.openModal(id);
-  const closeModals = () => window.closeModals();
+  const openModal = (id) => { if (typeof window.openModal === 'function') window.openModal(id); };
+  const closeModals = () => { if (typeof window.closeModals === 'function') window.closeModals(); };
 
   const $$ = (sel, root) => Array.prototype.slice.call((root || document).querySelectorAll(sel));
   const $ = (sel, root) => (root || document).querySelector(sel);
@@ -1360,7 +1189,7 @@ html[data-theme="dark"] .toast{background:#152330;color:#eaf1f8}
     return '★★★★★'.slice(0, full) + '☆☆☆☆☆'.slice(0, 5 - full);
   };
 
-  const toast = (msg, kind) => window.__aloraToast(msg, kind);
+  const toast = (msg, kind) => { if (typeof window.__aloraToast === 'function') window.__aloraToast(msg, kind); };
 
   /* ---------------- oturum ---------------- */
   async function paintUser() {
@@ -1910,4 +1739,3 @@ html[data-theme="dark"] .toast{background:#152330;color:#eaf1f8}
 </script>
 </body>
 </html>
-
