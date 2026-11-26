@@ -86,9 +86,13 @@
       <div class="lock-ic">
         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="10" width="16" height="10" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
       </div>
-      <h2>Yetkiniz yok</h2>
-      <p>Bu sayfa yalnızca yetkili hesaplara açıktır. Giriş yapın veya yöneticiden yetki isteyin.</p>
-      <a class="btn-primary" href="giris.html">Giriş yap</a>
+      <h2 id="lockTitle">Yetkiniz yok</h2>
+      <p id="lockDesc">Bu sayfa yalnızca yetkili hesaplara açıktır. Giriş yapın veya yöneticiden yetki isteyin.</p>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <a class="btn-primary" href="giris.html">Giriş yap</a>
+        <a class="btn-primary" id="lockWrong" href="#" style="display:none;background:#fff;color:#0d8fb0;border:1px solid #0d8fb0">Hesap değiştir</a>
+        <a class="btn-primary" href="index.html" style="background:#fff;color:#33465c;border:1px solid #dbe3ec">Siteye dön</a>
+      </div>
     </div>
 
     <div id="panelBody" hidden>
@@ -528,7 +532,20 @@
   /* ---------------- başlat ---------------- */
   (async function boot() {
     var ok = await guard();
-    if (!ok) { $('#lockScreen').style.display = 'block'; $('#panelBody').hidden = true; return; }
+    if (!ok) { $('#lockScreen').style.display = 'block'; $('#panelBody').hidden = true;
+      var t = document.getElementById('lockTitle'), d = document.getElementById('lockDesc');
+      var w = document.getElementById('lockWrong');
+      if (w) w.style.display = 'inline-flex';
+      var s0 = null;
+      try { s0 = JSON.parse(localStorage.getItem('alora.session.v2') || sessionStorage.getItem('alora.session.v2') || 'null'); } catch (e) {}
+      if (!s0 || !s0.access_token) {
+        if (t) t.textContent = 'Giriş yapmanız gerekiyor';
+        if (d) d.textContent = 'Kontrol paneli yalnızca yetkili hesaplara açıktır. Önce giriş yapın.';
+      } else {
+        if (t) t.textContent = 'Yetkiniz yok';
+        if (d) d.textContent = 'Bu hesap yetkili ya da yönetici değil. Başka bir hesapla giriş yapın.';
+      }
+      return; }
     $('#lockScreen').style.display = 'none';
     $('#panelBody').hidden = false;
 
@@ -541,6 +558,13 @@
       a.addEventListener('click', function (e) { e.preventDefault(); location.hash = a.getAttribute('data-tab'); });
     });
     window.addEventListener('hashchange', function () { setTab((location.hash || '#ozet').slice(1)); });
+
+    var lw = document.getElementById('lockWrong');
+    if (lw) lw.addEventListener('click', function (e) {
+      e.preventDefault();
+      try { localStorage.removeItem('alora.session.v2'); sessionStorage.removeItem('alora.session.v2'); } catch (er) {}
+      location.href = 'giris.html';
+    });
 
     $('#refreshBtn').addEventListener('click', render);
     var mb = $('#menuBtn');
