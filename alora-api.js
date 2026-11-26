@@ -15,14 +15,24 @@
   const SESSION_KEY_V2 = 'alora.session.v2';
   function readSession() {
     try {
-      // yeni kimlik modülünün oturumu esas alınır (tek oturum kaynağı)
-      const v2 = localStorage.getItem(SESSION_KEY_V2) || sessionStorage.getItem(SESSION_KEY_V2);
+      var v2 = localStorage.getItem(SESSION_KEY_V2) || sessionStorage.getItem(SESSION_KEY_V2);
       if (v2) {
-        const s2 = JSON.parse(v2);
+        var s2 = JSON.parse(v2);
+        // expires_at ms cinsinden; süresi geçmişse token yine denenir (worker 401 verirse refresh)
         if (s2 && s2.access_token) return s2;
       }
-      return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+      var old = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+      if (old && old.access_token) return old;
+      return null;
     } catch (e) { return null; }
+  }
+
+  // token'ı doğrudan Worker'dan al (alora-auth hiç çalışmadıysa kurtarma)
+  async function recoverToken() {
+    try {
+      var v2 = localStorage.getItem(SESSION_KEY_V2) || sessionStorage.getItem(SESSION_KEY_V2);
+      return !!v2;
+    } catch (e) { return false; }
   }
   function writeSession(s) {
     try {
