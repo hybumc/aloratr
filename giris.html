@@ -205,8 +205,8 @@
         await AloraAuth.signOut();
         throw new Error('Hesabınız askıya alınmış. Destek ile iletişime geçin.');
       }
-      if (p && (p.role === 'admin' || p.role === 'yetkili')) location.replace('panel.html');
-      else location.replace('hesabim.html');
+      // giriş başarılı → ana sayfaya dön (menüde kullanıcı çipi görünür)
+      location.replace('index.html');
     } catch (err) {
       show(errBox, document.getElementById('errText'), err.message || 'Giriş yapılamadı');
       btn.disabled = false;
