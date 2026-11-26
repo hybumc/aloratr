@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#12b8c8" />
+<title>Giriş Yap — ALORA</title>
+<meta name="description" content="ALORA hesabınıza giriş yapın." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230d1b2a'/%3E%3Cpath d='M32 12 51 51h-9.4L32 31 22.4 51H13Z' fill='%2312b8c8'/%3E%3C/svg%3E" />
+<link rel="stylesheet" href="assets/alora-ui.css" />
+</head>
+<body>
+<div class="page">
+
+  <header class="topbar">
+    <div class="topbar-in">
+      <a class="brand" href="index.html">
+        <span class="brand-mark">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 21 21h-4.6L12 11.6 7.6 21H3Z"/></svg>
+        </span>
+        ALORA
+      </a>
+      <div class="top-actions">
+        <a class="btn btn-ghost hide-sm" href="index.html">Siteye dön</a>
+        <a class="btn btn-secondary btn-sm" href="kayit.html">Üye ol</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="page-main">
+    <div class="auth-wrap">
+      <div class="wrap-narrow">
+
+        <div class="auth-head">
+          <h1>Tekrar hoş geldiniz</h1>
+          <p>Hesabınıza giriş yapın; projelerinizi ve yorumlarınızı yönetin.</p>
+        </div>
+
+        <div class="card auth-card">
+          <div class="alert alert-err" id="errBox"></div>
+          <div class="alert alert-ok" id="okBox"></div>
+
+          <form id="loginForm" novalidate autocomplete="on">
+            <div class="field">
+              <label for="identifier">Kullanıcı adı veya e-posta</label>
+              <input id="identifier" name="username" type="text" autocomplete="username"
+                     autocapitalize="none" spellcheck="false" placeholder="aloratr" required />
+            </div>
+
+            <div class="field">
+              <label for="password">Şifre</label>
+              <div class="pw-wrap">
+                <input id="password" name="password" type="password" autocomplete="current-password"
+                       placeholder="••••••••" required />
+                <button class="pw-eye" type="button" data-pw="password" aria-label="Şifreyi göster">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="row-between" style="margin-bottom:18px">
+              <label class="check"><input type="checkbox" id="remember" checked /> Beni hatırla</label>
+              <a href="#" id="forgotLink" style="font-size:13.5px">Şifremi unuttum</a>
+            </div>
+
+            <button class="btn btn-primary btn-block" type="submit" id="submitBtn">Giriş yap</button>
+          </form>
+
+          <p class="form-note">
+            Hesabınız yok mu? <a href="kayit.html">Hemen üye olun</a>
+          </p>
+        </div>
+
+        <p class="form-note" style="margin-top:18px">
+          Giriş yapmadan da tüm projeleri indirebilirsiniz. <a href="index.html">Projelere göz at</a>
+        </p>
+
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-foot">
+    © 2026 ALORA — Proje Platformu · <a href="index.html#gizlilik">Gizlilik</a> · <a href="LICENSE">Lisans</a>
+  </footer>
+
+</div>
+
+<script src="assets/alora-ui.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var errBox = document.getElementById('errBox');
+  var okBox = document.getElementById('okBox');
+  var form = document.getElementById('loginForm');
+  var btn = document.getElementById('submitBtn');
+
+  function show(el, msg) {
+    errBox.classList.remove('show'); okBox.classList.remove('show');
+    if (!msg) return;
+    el.textContent = msg;
+    el.classList.add('show');
+  }
+
+  // zaten girişliyse panele gönder
+  AloraAuth.me().then(function (s) {
+    if (s && s.user) {
+      var p = s.profile;
+      if (p && (p.role === 'admin')) location.replace('panel.html');
+      else if (p && p.role === 'yetkili') location.replace('panel.html');
+      else location.replace('index.html');
+    }
+  });
+
+  form.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var id = document.getElementById('identifier').value.trim();
+    var pw = document.getElementById('password').value;
+    var remember = document.getElementById('remember').checked;
+
+    if (!id) { show(errBox, 'Kullanıcı adınızı veya e-postanızı yazın'); return; }
+    if (pw.length < 6) { show(errBox, 'Şifre en az 6 karakter olmalı'); return; }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spin"></span> Giriş yapılıyor…';
+    show(null);
+
+    try {
+      await AloraAuth.signIn(id, pw, remember);
+      var s = await AloraAuth.me();
+      var p = s && s.profile;
+      if (p && p.banned) {
+        await AloraAuth.signOut();
+        throw new Error('Hesabınız askıya alınmış. Destek ile iletişime geçin.');
+      }
+      if (p && (p.role === 'admin' || p.role === 'yetkili')) location.replace('panel.html');
+      else location.replace('index.html');
+    } catch (err) {
+      show(errBox, err.message || 'Giriş yapılamadı');
+      btn.disabled = false;
+      btn.textContent = 'Giriş yap';
+    }
+  });
+
+  // şifremi unuttum
+  document.getElementById('forgotLink').addEventListener('click', async function (e) {
+    e.preventDefault();
+    var id = document.getElementById('identifier').value.trim();
+    if (!id) { show(errBox, 'Önce e-posta adresinizi yazın, sıfırlama bağlantısı gönderelim'); return; }
+    btn.disabled = true;
+    try {
+      await AloraAuth.resetPassword(id.indexOf('@') > 0 ? id : id + '@alora.app');
+      show(okBox, 'Sıfırlama bağlantısı gönderildi. Gelen kutunuzu kontrol edin.');
+    } catch (err) {
+      show(errBox, err.message || 'Gönderilemedi');
+    } finally {
+      btn.disabled = false;
+    }
+  });
+})();
+</script>
+</body>
+</html>
