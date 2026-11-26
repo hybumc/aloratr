@@ -94,6 +94,7 @@
     const data = await call('/auth/signup', {
       body: { email: (email || '').trim(), password, username: (username || '').trim(), full_name: (fullName || '').trim() }
     });
+    // e-posta doğrulaması kapalıysa Supabase oturumu doğrudan döndürür
     if (data.access_token) {
       const sess = {
         access_token: data.access_token,
@@ -104,7 +105,16 @@
       write(sess, true);
       return { session: sess, needConfirm: false };
     }
-    return { session: null, needConfirm: true, user: data.user || null };
+    // oturum dönmediyse hemen giriş deneyelim
+    try {
+      const s2 = await signIn(email, password, true);
+      return { session: s2, needConfirm: false };
+    } catch (e) {
+      if (e.status === 400 && /confirm/i.test(e.message)) {
+        return { session: null, needConfirm: true, user: data.user || null };
+      }
+      throw e;
+    }
   }
 
   async function signOut() {
