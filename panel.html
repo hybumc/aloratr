@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0d1b2a" />
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet" />
+<title>ALORA — Kontrol Paneli</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230d1b2a'/%3E%3Cpath d='M32 12 51 51h-9.4L32 31 22.4 51H13Z' fill='%2312b8c8'/%3E%3C/svg%3E" />
+<link rel="stylesheet" href="assets/alora-ui.css" />
+<style>
+  body{background:var(--bg)}
+  .panel-shell{display:grid;grid-template-columns:250px 1fr;min-height:100vh;min-height:100dvh}
+  .side{background:var(--card);border-right:1px solid var(--line);padding:16px 12px;display:flex;flex-direction:column;gap:4px}
+  .side-brand{display:flex;align-items:center;gap:9px;font-weight:800;font-size:16px;padding:6px 8px 18px;color:var(--ink)}
+  .side a.nav{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;font-size:13.5px;font-weight:550;color:var(--ink-2);text-decoration:none;transition:background .15s,color .15s}
+  .side a.nav:hover{background:rgba(18,184,200,.09);color:var(--brand);text-decoration:none}
+  .side a.nav.on{background:linear-gradient(135deg,rgba(18,184,200,.14),rgba(138,79,176,.1));color:var(--brand);font-weight:650}
+  .side a.nav svg{flex:0 0 auto;opacity:.9}
+  .side-foot{margin-top:auto;padding-top:14px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:6px}
+  .main{padding:20px;overflow-x:hidden}
+  .main-head{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+  .main-head h1{font-size:22px;font-weight:750;color:var(--ink)}
+  .main-head p{margin:4px 0 0;font-size:13.5px;color:var(--muted)}
+
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+  .stat small{display:block;font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:650;margin-bottom:6px}
+  .stat b{font-size:24px;font-weight:800;color:var(--ink);letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+  .stat span{display:block;font-size:11.5px;color:var(--muted);margin-top:3px}
+
+  .box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:0;overflow:hidden;margin-bottom:18px}
+  .box-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .box-head h3{font-size:14.5px;font-weight:700;color:var(--ink)}
+  .box-head span{font-size:12px;color:var(--muted)}
+  .box-body{padding:14px 16px}
+  .tbl{width:100%;border-collapse:collapse;font-size:13px}
+  .tbl th{text-align:left;padding:10px 14px;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:650;border-bottom:1px solid var(--line);white-space:nowrap}
+  .tbl td{padding:11px 14px;border-bottom:1px solid var(--line);color:var(--ink-2);vertical-align:middle}
+  .tbl tr:last-child td{border-bottom:none}
+  .tbl tr:hover td{background:rgba(18,184,200,.04)}
+  .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+
+  .pill{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;font-size:11.5px;font-weight:650}
+  .pill-admin{background:rgba(138,79,176,.14);color:#7a3fa0}
+  .pill-staff{background:rgba(18,184,200,.14);color:#0a8b98}
+  .pill-user{background:rgba(107,124,143,.14);color:#5b6b7c}
+  .pill-ban{background:rgba(229,72,77,.14);color:#c62b30}
+  .pill-ok{background:rgba(23,178,106,.14);color:#0d6b41}
+  html[data-theme="dark"] .pill-admin{color:#c39ae0}
+  html[data-theme="dark"] .pill-staff{color:#6ee0ea}
+  html[data-theme="dark"] .pill-user{color:#a9b8c6}
+  html[data-theme="dark"] .pill-ban{color:#ff9a9e}
+  html[data-theme="dark"] .pill-ok{color:#6ee7a8}
+
+  .feed{display:flex;flex-direction:column}
+  .feed-i{display:flex;gap:11px;padding:11px 16px;border-bottom:1px solid var(--line);font-size:13px}
+  .feed-i:last-child{border-bottom:none}
+  .feed-av{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;background:linear-gradient(135deg,var(--brand),var(--brand-2));flex:0 0 auto}
+  .feed-t{flex:1;min-width:0}
+  .feed-t b{color:var(--ink);font-weight:650}
+  .feed-t small{display:block;color:var(--muted);font-size:11.5px;margin-top:2px}
+
+  .lock{max-width:420px;margin:80px auto;text-align:center;padding:0 16px}
+  .lock h2{font-size:22px;margin-bottom:10px;color:var(--ink)}
+  .lock p{color:var(--muted);font-size:14px;line-height:1.65;margin-bottom:20px}
+  .lock-ic{width:56px;height:56px;border-radius:16px;display:grid;place-items:center;margin:0 auto 18px;background:rgba(229,72,77,.12);color:#c62b30}
+
+  .mobile-bar{display:none}
+  @media(max-width:860px){
+    .panel-shell{grid-template-columns:1fr}
+    .side{display:none}
+    .side.open{display:flex;position:fixed;inset:0 auto 0 0;width:250px;z-index:120;box-shadow:0 0 40px rgba(0,0,0,.3)}
+    .main{padding:14px}
+    .mobile-bar{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);background:var(--card);position:sticky;top:0;z-index:60}
+  }
+</style>
+</head>
+<body>
+
+<div class="mobile-bar">
+  <button class="btn btn-secondary btn-sm" id="menuBtn" aria-label="Menü">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+  </button>
+  <span style="font-weight:800;font-size:15px">Kontrol Paneli</span>
+  <button class="btn btn-ghost btn-sm" style="margin-left:auto" data-theme-toggle aria-label="Tema">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
+  </button>
+</div>
+
+<div class="panel-shell">
+
+  <aside class="side" id="sideNav">
+    <div class="side-brand">
+      <span class="brand-mark" style="width:28px;height:28px">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 21 21h-4.6L12 11.6 7.6 21H3Z"/></svg>
+      </span>
+      ALORA
+    </div>
+
+    <a class="nav on" href="#ozet" data-tab="ozet">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+      Özet
+    </a>
+    <a class="nav" href="#uyeler" data-tab="uyeler">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 5.5a3 3 0 0 1 0 5.8M17.5 20a6 6 0 0 0-2-4.5"/></svg>
+      Üyeler
+    </a>
+    <a class="nav" href="#oturumlar" data-tab="oturumlar">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2.5" y="4" width="19" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+      Oturumlar
+    </a>
+    <a class="nav" href="#etkinlik" data-tab="etkinlik">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12h4l2.5-6 4 12 2.5-6h5"/></svg>
+      Etkinlik
+    </a>
+    <a class="nav" href="#projeler" data-tab="projeler">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 3 7.5v9L12 21l9-4.5v-9L12 3Z"/><path d="M3 7.5 12 12l9-4.5M12 12v9"/></svg>
+      Projeler
+    </a>
+    <a class="nav" href="#yorumlar" data-tab="yorumlar">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.3-.6L3 21l1.7-5.1a8.4 8.4 0 0 1-.7-3.4 8.4 8.4 0 0 1 8.4-8.4 8.4 8.4 0 0 1 8.6 7.4Z"/></svg>
+      Yorumlar
+    </a>
+
+    <div class="side-foot">
+      <a class="nav" href="index.html">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/></svg>
+        Siteye dön
+      </a>
+      <button class="btn btn-secondary btn-sm" data-logout style="justify-content:flex-start">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+        Çıkış yap
+      </button>
+    </div>
+  </aside>
+
+  <main class="main" id="mainArea">
+    <div id="lockScreen" class="lock" style="display:none">
+      <div class="lock-ic">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="10" width="16" height="10" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+      </div>
+      <h2>Yetkiniz yok</h2>
+      <p>Bu sayfa yalnızca yetkili hesaplara açıktır. Giriş yapın veya yöneticiden yetki isteyin.</p>
+      <a class="btn btn-primary" href="giris.html">Giriş yap</a>
+    </div>
+
+    <div id="panelBody" style="display:none">
+      <div class="main-head">
+        <div>
+          <h1 id="pageTitle">Özet</h1>
+          <p id="pageSub">Platformun anlık durumu</p>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn btn-secondary btn-sm" id="refreshBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 6.3M20 5v6h-6"/></svg>
+            Yenile
+          </button>
+          <span class="pill pill-ok" id="rolePill">—</span>
+        </div>
+      </div>
+
+      <div id="tabContent"></div>
+    </div>
+  </main>
+</div>
+
+<script src="assets/alora-ui.js"></script>
+<script src="alora-auth.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var API = window.AloraAuth;
+  var state = { me: null, profile: null, tab: 'ozet', data: {} };
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function fmtDate(d) {
+    if (!d) return '—';
+    var x = new Date(d);
+    return x.toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' +
+           x.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+  }
+  function ago(d) {
+    if (!d) return '';
+    var s = Math.floor((Date.now() - new Date(d).getTime()) / 1000);
+    if (s < 60) return 'az önce';
+    if (s < 3600) return Math.floor(s / 60) + ' dk önce';
+    if (s < 86400) return Math.floor(s / 3600) + ' sa önce';
+    return Math.floor(s / 86400) + ' gün önce';
+  }
+  function rolePill(role) {
+    var cls = role === 'admin' ? 'pill-admin' : role === 'yetkili' ? 'pill-staff' : 'pill-user';
+    return '<span class="pill ' + cls + '">' + esc(API.roleLabel(role)) + '</span>';
+  }
+
+  /* ---------- giriş kontrolü ---------- */
+  async function guard() {
+    var s = await API.me();
+    if (!s || !s.user || !s.profile) { showLock(); return false; }
+    if (!API.isStaff(s.profile)) { showLock(); return false; }
+    state.me = s.user;
+    state.profile = s.profile;
+    return true;
+  }
+
+  function showLock() {
+    $('#lockScreen').style.display = 'block';
+    $('#panelBody').style.display = 'none';
+  }
+
+  /* ---------- sekmeler ---------- */
+  var TITLES = {
+    ozet: ['Özet', 'Platformun anlık durumu'],
+    uyeler: ['Üyeler', 'Kayıtlı kullanıcılar ve rolleri'],
+    oturumlar: ['Oturumlar', 'Kim, ne zaman, hangi cihazdan giriş yaptı'],
+    etkinlik: ['Etkinlik', 'Son yapılan işlemler'],
+    projeler: ['Projeler', 'Yayınlanan projeler ve indirme sayıları'],
+    yorumlar: ['Yorumlar', 'Kullanıcı yorumları ve puanlar']
+  };
+
+  function setTab(tab) {
+    state.tab = tab;
+    $$('.side .nav[data-tab]').forEach(function (a) {
+      a.classList.toggle('on', a.getAttribute('data-tab') === tab);
+    });
+    var t = TITLES[tab] || TITLES.ozet;
+    $('#pageTitle').textContent = t[0];
+    $('#pageSub').textContent = t[1];
+    if (window.innerWidth <= 860) $('#sideNav').classList.remove('open');
+    render();
+  }
+
+  /* ---------- veri ---------- */
+  async function loadSummary() {
+    try {
+      var r = await API.call('/admin/summary');
+      state.data.summary = r;
+    } catch (e) { state.data.summary = null; }
+  }
+  async function loadMembers() {
+    try {
+      var r = await API.call('/admin/members');
+      state.data.members = Array.isArray(r) ? r : [];
+    } catch (e) { state.data.members = []; }
+  }
+  async function loadProjects() {
+    try {
+      var r = await API.call('/rest/projects?select=*&order=created_at.desc&limit=100');
+      state.data.projects = Array.isArray(r) ? r : [];
+    } catch (e) { state.data.projects = []; }
+  }
+  async function loadComments() {
+    try {
+      var r = await API.call('/rest/comments?select=*&order=created_at.desc&limit=100');
+      state.data.comments = Array.isArray(r) ? r : [];
+    } catch (e) { state.data.comments = []; }
+  }
+  async function loadSessions() {
+    try {
+      var r = await API.call('/rest/sessions_log?select=*&order=logged_in_at.desc&limit=100');
+      state.data.sessions = Array.isArray(r) ? r : [];
+    } catch (e) { state.data.sessions = []; }
+  }
+
+  /* ---------- görünümler ---------- */
+  function viewOzet() {
+    var s = state.data.summary;
+    if (!s) {
+      return '<div class="box"><div class="box-body" style="color:var(--muted);font-size:13.5px">' +
+        'Özet yüklenemedi. Veritabanı şeması henüz güncellenmemiş olabilir — <code>schema-v2.sql</code> dosyasını Supabase SQL Editor\'de çalıştırın.' +
+        '</div></div>' + viewActivity(null);
+    }
+    var cards = [
+      ['Projeler', s.projeler, 'yayında'],
+      ['Kullanıcılar', s.kullanicilar, s.yetkililer + ' yetkili'],
+      ['Yorumlar', s.yorumlar, 'geri bildirim'],
+      ['İndirmeler', s.indirmeler, 'toplam'],
+      ['Aktif oturum', s.aktif_oturum, 'son 30 dk'],
+      ['Bugün giriş', s.bugun_giris, 'kişi'],
+      ['Dosyalar', s.dosyalar, s.depolama_mb + ' MB']
+    ];
+    var html = '<div class="stats">' + cards.map(function (c) {
+      return '<div class="stat"><small>' + esc(c[0]) + '</small><b>' + esc(c[1]) + '</b><span>' + esc(c[2]) + '</span></div>';
+    }).join('') + '</div>';
+
+    html += '<div style="display:grid;grid-template-columns:1fr;gap:16px">';
+    html += viewActivity(s.son_etkinlik);
+    html += viewRecentUsers(s.son_kayitlar);
+    html += '</div>';
+    return html;
+  }
+
+  function viewActivity(list) {
+    var items = list || [];
+    var h = '<div class="box"><div class="box-head"><h3>Son etkinlik</h3><span>' + items.length + ' kayıt</span></div>';
+    if (!items.length) return h + '<div class="box-body" style="color:var(--muted);font-size:13.5px">Henüz etkinlik yok.</div></div>';
+    h += '<div class="feed">' + items.map(function (a) {
+      var initial = (a.actor || '?').charAt(0).toUpperCase();
+      return '<div class="feed-i">' +
+        '<span class="feed-av">' + esc(initial) + '</span>' +
+        '<span class="feed-t"><b>' + esc(a.actor) + '</b> — ' + esc(a.action) +
+          (a.detail ? ' <span style="color:var(--muted)">' + esc(a.detail) + '</span>' : '') +
+          '<small>' + ago(a.created_at) + ' · ' + fmtDate(a.created_at) + '</small></span>' +
+        '</div>';
+    }).join('') + '</div></div>';
+    return h;
+  }
+
+  function viewRecentUsers(list) {
+    var items = list || [];
+    var h = '<div class="box"><div class="box-head"><h3>Son kayıtlar</h3><span>' + items.length + ' kişi</span></div>';
+    if (!items.length) return h + '<div class="box-body" style="color:var(--muted);font-size:13.5px">Henüz üye yok.</div></div>';
+    h += '<div class="feed">' + items.map(function (u) {
+      var initial = (u.full_name || u.username || '?').charAt(0).toUpperCase();
+      return '<div class="feed-i">' +
+        '<span class="feed-av">' + esc(initial) + '</span>' +
+        '<span class="feed-t"><b>' + esc(u.full_name || u.username) + '</b> ' + rolePill(u.role) +
+          '<small>@' + esc(u.username) + ' · ' + fmtDate(u.created_at) + '</small></span>' +
+        '</div>';
+    }).join('') + '</div></div>';
+    return h;
+  }
+
+  function viewMembers() {
+    var list = state.data.members || [];
+    var h = '<div class="box"><div class="box-head"><h3>Üyeler</h3><span>' + list.length + ' kullanıcı</span></div>';
+    if (!list.length) return h + '<div class="box-body" style="color:var(--muted);font-size:13.5px">Üye listesi alınamadı ya da henüz üye yok. Şemayı güncellediyseniz sayfayı yenileyin.</div></div>';
+
+    var isAdmin = API.isAdmin(state.profile);
+    h += '<div class="tbl-wrap"><table class="tbl"><thead><tr>' +
+      '<th>Kullanıcı</th><th>E-posta</th><th>Rol</th><th>Proje</th><th>Yorum</th><th>Kayıt</th><th></th>' +
+      '</tr></thead><tbody>';
+    list.forEach(function (u) {
+      var banned = u.banned;
+      h += '<tr>' +
+        '<td><b style="color:var(--ink)">' + esc(u.full_name || u.username) + '</b><br><small style="color:var(--muted)">@' + esc(u.username) + '</small></td>' +
+        '<td>' + esc(u.email || '—') + '</td>' +
+        '<td>' + rolePill(u.role) + (banned ? ' <span class="pill pill-ban">askıda</span>' : '') + '</td>' +
+        '<td>' + u.proje_sayisi + '</td>' +
+        '<td>' + u.yorum_sayisi + '</td>' +
+        '<td style="white-space:nowrap">' + fmtDate(u.created_at) + '</td>' +
+        '<td style="white-space:nowrap">' +
+          (isAdmin ? '<select data-role="' + u.id + '" style="font-size:12px;padding:5px 8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink)">' +
+            ['uye', 'yetkili', 'admin'].map(function (r) {
+              return '<option value="' + r + '"' + (u.role === r ? ' selected' : '') + '>' + API.roleLabel(r) + '</option>';
+            }).join('') + '</select> ' +
+            '<button class="btn btn-secondary btn-sm" data-ban="' + u.id + '" data-banned="' + (banned ? '1' : '0') + '">' +
+            (banned ? 'Aç' : 'Askıya al') + '</button>' : '<span style="color:var(--muted);font-size:12px">sadece yönetici</span>') +
+        '</td>' +
+      '</tr>';
+    });
+    h += '</tbody></table></div></div>';
+    h += '<p style="font-size:12.5px;color:var(--muted);margin:0">Rol değişikliği anında uygulanır. Yönetici, tüm sisteme erişir.</p>';
+    return h;
+  }
+
+  function viewSessions() {
+    var list = state.data.sessions || [];
+    var h = '<div class="box"><div class="box-head"><h3>Giriş oturumları</h3><span>' + list.length + ' kayıt</span></div>';
+    if (!list.length) return h + '<div class="box-body" style="color:var(--muted);font-size:13.5px">Henüz oturum kaydı yok.</div></div>';
+    h += '<div class="tbl-wrap"><table class="tbl"><thead><tr>' +
+      '<th>Kullanıcı</th><th>Cihaz</th><th>Giriş</th><th>Son görülme</th><th>IP</th><th>Durum</th>' +
+      '</tr></thead><tbody>';
+    list.forEach(function (s) {
+      var active = s.active && (Date.now() - new Date(s.last_seen_at).getTime()) < 30 * 60000;
+      h += '<tr>' +
+        '<td><b style="color:var(--ink)">' + esc(s.username) + '</b></td>' +
+        '<td>' + esc(s.device) + '</td>' +
+        '<td style="white-space:nowrap">' + fmtDate(s.logged_in_at) + '</td>' +
+        '<td style="white-space:nowrap">' + ago(s.last_seen_at) + '</td>' +
+        '<td><small style="color:var(--muted)">' + esc(s.ip || '—') + '</small></td>' +
+        '<td>' + (active ? '<span class="pill pill-ok">aktif</span>' : '<span class="pill pill-user">kapalı</span>') + '</td>' +
+      '</tr>';
+    });
+    h += '</tbody></table></div></div>';
+    return h;
+  }
+
+  function viewProjects() {
+    var list = state.data.projects || [];
+    var h = '<div class="box"><div class="box-head"><h3>Projeler</h3><span>' + list.length + ' proje</span></div>';
+    if (!list.length) return h + '<div class="box-body" style="color:var(--muted);font-size:13.5px">Henüz proje yok. <a href="index.html">Siteden yeni proje ekleyin</a>.</div></div>';
+    h += '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Proje</th><th>Sürüm</th><th>Durum</th><th>İndirme</th><th>Tarih</th><th></th></tr></thead><tbody>';
+    list.forEach(function (p) {
+      var st = p.status === 'yayinda' ? '<span class="pill pill-ok">yayında</span>' :
+               p.status === 'bakimda' ? '<span class="pill pill-staff">bakımda</span>' :
+               '<span class="pill pill-user">arşiv</span>';
+      h += '<tr>' +
+        '<td><b style="color:var(--ink)">' + esc(p.name) + '</b><br><small style="color:var(--muted)">' + esc(p.author) + '</small></td>' +
+        '<td>' + esc(p.version) + '</td>' +
+        '<td>' + st + '</td>' +
+        '<td>' + p.downloads + '</td>' +
+        '<td style="white-space:nowrap">' + fmtDate(p.created_at) + '</td>' +
+        '<td><button class="btn btn-danger btn-sm" data-delproj="' + p.id + '">Sil</button></td>' +
+      '</tr>';
+    });
+    h += '</tbody></table></div></div>';
+    return h;
+  }
+
+  function viewComments() {
+    var list = state.data.comments || [];
+    var h = '<div class="box"><div class="box-head"><h3>Yorumlar</h3><span>' + list.length + ' yorum</span></div>';
+    if (!list.length) return h + '<div class="box-body" style="color:var(--muted);font-size:13.5px">Henüz yorum yok.</div></div>';
+    h += '<div class="feed">' + list.map(function (c) {
+      var stars = c.rating ? '★'.repeat(c.rating) : '';
+      return '<div class="feed-i">' +
+        '<span class="feed-av">' + esc((c.author || 'Z').charAt(0).toUpperCase()) + '</span>' +
+        '<span class="feed-t"><b>' + esc(c.author) + '</b> ' +
+          (stars ? '<span style="color:#f5a623">' + stars + '</span>' : '') +
+          '<div style="color:var(--ink-2);margin:4px 0">' + esc(c.body) + '</div>' +
+          '<small>' + ago(c.created_at) + '</small></span>' +
+        '</div>';
+    }).join('') + '</div></div>';
+    return h;
+  }
+
+  /* ---------- çiz ---------- */
+  async function render() {
+    var box = $('#tabContent');
+    box.innerHTML = '<div class="box"><div class="box-body" style="color:var(--muted);font-size:13.5px">Yükleniyor…</div></div>';
+
+    if (state.tab === 'ozet') { await loadSummary(); await loadMembers(); box.innerHTML = viewOzet(); }
+    else if (state.tab === 'uyeler') { await loadMembers(); box.innerHTML = viewMembers(); }
+    else if (state.tab === 'oturumlar') { await loadSessions(); box.innerHTML = viewSessions(); }
+    else if (state.tab === 'etkinlik') { await loadSummary(); box.innerHTML = viewActivity((state.data.summary || {}).son_etkinlik); }
+    else if (state.tab === 'projeler') { await loadProjects(); box.innerHTML = viewProjects(); }
+    else if (state.tab === 'yorumlar') { await loadComments(); box.innerHTML = viewComments(); }
+
+    bindActions();
+  }
+
+  function bindActions() {
+    $$('[data-role]').forEach(function (sel) {
+      sel.addEventListener('change', async function () {
+        var uid = sel.getAttribute('data-role');
+        var role = sel.value;
+        if (!confirm('Rolü "' + API.roleLabel(role) + '" olarak değiştirmek istiyor musunuz?')) { render(); return; }
+        try {
+          await API.call('/admin/role', { method: 'POST', body: { user_id: uid, role: role } });
+          await render();
+        } catch (e) { alert(e.message); }
+      });
+    });
+
+    $$('[data-ban]').forEach(function (b) {
+      b.addEventListener('click', async function () {
+        var uid = b.getAttribute('data-ban');
+        var banned = b.getAttribute('data-banned') === '1';
+        if (!confirm(banned ? 'Bu üyenin erişimini açmak istiyor musunuz?' : 'Bu üyeyi askıya almak istiyor musunuz?')) return;
+        try {
+          await API.call('/admin/ban', { method: 'POST', body: { user_id: uid, banned: !banned } });
+          await render();
+        } catch (e) { alert(e.message); }
+      });
+    });
+
+    $$('[data-delproj]').forEach(function (b) {
+      b.addEventListener('click', async function () {
+        var id = b.getAttribute('data-delproj');
+        if (!confirm('Bu proje kalıcı olarak silinsin mi? Dosyaları da silinir.')) return;
+        try {
+          await API.call('/rest/projects?id=eq.' + id, { method: 'DELETE' });
+          await render();
+        } catch (e) { alert(e.message); }
+      });
+    });
+  }
+
+  /* ---------- başlat ---------- */
+  (async function boot() {
+    var ok = await guard();
+    if (!ok) return;
+    $('#panelBody').style.display = 'block';
+    $('#rolePill').textContent = API.roleLabel(state.profile.role);
+
+    $$('.side .nav[data-tab]').forEach(function (a) {
+      a.addEventListener('click', function (e) {
+        e.preventDefault();
+        location.hash = a.getAttribute('data-tab');
+      });
+    });
+    window.addEventListener('hashchange', function () {
+      setTab((location.hash || '#ozet').slice(1));
+    });
+
+    $('#refreshBtn').addEventListener('click', render);
+
+    $('#menuBtn') && $('#menuBtn').addEventListener('click', function () {
+      $('#sideNav').classList.toggle('open');
+    });
+
+    var lo = $('[data-logout]');
+    if (lo) lo.addEventListener('click', async function () {
+      await API.signOut();
+      location.replace('index.html');
+    });
+
+    setTab((location.hash || '#ozet').slice(1) || 'ozet');
+  })();
+})();
+</script>
+</body>
+</html>
