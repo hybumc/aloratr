@@ -475,8 +475,15 @@ html[data-theme="dark"] .sp-hero{background:linear-gradient(90deg,rgba(23,178,10
 .um-wrap{position:relative;display:flex;align-items:center;gap:7px}
 .um-btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:999px;padding:5px 12px 5px 6px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:border-color .16s,box-shadow .16s,transform .16s;text-decoration:none;min-height:38px}
 .um-btn:hover{border-color:var(--brand);text-decoration:none}
-.um-panel{border-radius:11px;padding:8px 13px;background:linear-gradient(135deg,var(--brand),#0f9fb5);color:#fff;border-color:transparent;box-shadow:0 6px 16px -8px rgba(18,184,200,.8)}
-.um-panel:hover{color:#fff;box-shadow:0 10px 22px -8px rgba(18,184,200,.95)}
+.um-panel,.um-panel:visited{border-radius:11px;padding:8px 14px;min-height:38px;
+  background:linear-gradient(135deg,#12b8c8 0%,#0d8fa0 100%) !important;
+  color:#ffffff !important;border:1px solid #0d8fa0 !important;
+  font-weight:700;letter-spacing:.01em;
+  box-shadow:0 6px 16px -8px rgba(18,184,200,.85);display:inline-flex;align-items:center;gap:6px}
+.um-panel span,.um-panel svg{color:#ffffff !important;fill:none}
+.um-panel:hover,.um-panel:focus{color:#ffffff !important;background:linear-gradient(135deg,#0f9fb5 0%,#0a7280 100%) !important;
+  box-shadow:0 10px 24px -8px rgba(18,184,200,1);text-decoration:none}
+.um-panel:active{transform:translateY(1px)}
 .um-av{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:11.5px;font-weight:800;color:#fff;background:linear-gradient(135deg,#12a4b5,#8a4fb0);flex:0 0 auto;letter-spacing:.02em}
 .um-av.lg{width:38px;height:38px;font-size:14px}
 .um-txt{display:flex;flex-direction:column;line-height:1.15;text-align:left;max-width:120px}
@@ -520,7 +527,7 @@ html[data-theme="dark"] .um-item:hover{background:rgba(94,230,242,.11)}
 }
 html[data-theme="dark"] .um-btn{background:#111c26;border-color:#25333f;color:#eaf1f8}
 html[data-theme="dark"] .um-txt strong{color:#eaf1f8}
-html[data-theme="dark"] .um-panel{background:linear-gradient(135deg,#12b8c8,#0f9fb5);border-color:transparent;color:#fff}
+html[data-theme="dark"] .um-panel{background:linear-gradient(135deg,#12b8c8,#0d8fa0) !important;border-color:#0d8fa0 !important;color:#fff !important}
 html[data-theme="dark"] .um-panel:hover{color:#fff}
 html[data-theme="dark"] .um-drop{background:#0f1822;border-color:#25333f}
 html[data-theme="dark"] .um-drop-head{border-color:#25333f}
