@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#12b8c8" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Ayarlar — ALORA</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230d1b2a'/%3E%3Cpath d='M32 12 51 51h-9.4L32 31 22.4 51H13Z' fill='%2312b8c8'/%3E%3C/svg%3E" />
+<link rel="stylesheet" href="assets/alora-ui.css" />
+<style>
+  .set-wrap{max-width:720px;margin:0 auto;padding:26px 16px 60px}
+  .set-head{margin-bottom:22px}
+  .set-head h1{font-size:clamp(21px,4.4vw,26px);font-weight:750;color:var(--ink)}
+  .set-head p{margin:7px 0 0;color:var(--muted);font-size:14px}
+  .set-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:16px;box-shadow:0 1px 2px rgba(13,27,42,.04)}
+  .set-card h3{font-size:15px;font-weight:700;color:var(--ink);margin-bottom:4px}
+  .set-card .sub{font-size:12.5px;color:var(--muted);margin-bottom:16px;line-height:1.55}
+  .set-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 0;border-bottom:1px solid var(--line)}
+  .set-row:last-child{border-bottom:0;padding-bottom:0}
+  .set-row .t{flex:1;min-width:0}
+  .set-row .t b{display:block;font-size:13.5px;font-weight:600;color:var(--ink)}
+  .set-row .t small{display:block;font-size:12px;color:var(--muted);margin-top:3px;line-height:1.5}
+  .switch{position:relative;width:46px;height:26px;flex:0 0 auto;cursor:pointer}
+  .switch input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
+  .switch .track{position:absolute;inset:0;border-radius:999px;background:var(--line);transition:background .22s}
+  .switch .knob{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .22s cubic-bezier(.34,1.56,.64,1)}
+  .switch input:checked + .track{background:linear-gradient(135deg,var(--brand),#0f9fb5)}
+  .switch input:checked + .track .knob{transform:translateX(20px)}
+  .seg{display:inline-flex;background:var(--bg);border:1px solid var(--line);border-radius:11px;padding:3px;gap:3px}
+  .seg button{border:0;background:transparent;color:var(--ink-2);font:inherit;font-size:12.5px;font-weight:600;padding:7px 14px;border-radius:8px;cursor:pointer;transition:background .16s,color .16s}
+  .seg button.on{background:var(--card);color:var(--brand);box-shadow:0 1px 3px rgba(13,27,42,.1)}
+  .acc{display:flex;align-items:center;gap:13px;margin-bottom:16px}
+  .acc-av{width:54px;height:54px;border-radius:16px;display:grid;place-items:center;font-size:20px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--brand),var(--brand-2));flex:0 0 auto}
+  .acc b{display:block;font-size:15px;color:var(--ink)}
+  .acc small{display:block;font-size:12.5px;color:var(--muted);margin-top:2px}
+  .save-note{position:fixed;left:50%;bottom:22px;transform:translate(-50%,20px);background:#0d1b2a;color:#fff;padding:10px 18px;border-radius:12px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:300}
+  .save-note.show{opacity:1;transform:translate(-50%,0)}
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="topbar">
+    <div class="topbar-in">
+      <a class="brand" href="index.html">
+        <span class="brand-mark"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 21 21h-4.6L12 11.6 7.6 21H3Z"/></svg></span>
+        ALORA
+      </a>
+      <div class="top-actions" data-user-slot></div>
+    </div>
+  </header>
+
+  <main class="page-main">
+    <div class="set-wrap">
+      <div class="set-head">
+        <h1>Ayarlar</h1>
+        <p>Görünüm, bildirim ve hesap tercihlerinizi buradan yönetin.</p>
+      </div>
+
+      <div class="set-card">
+        <div class="acc">
+          <div class="acc-av" id="accAv">?</div>
+          <div>
+            <b id="accName">—</b>
+            <small id="accSub">—</small>
+          </div>
+        </div>
+        <a class="btn btn-secondary btn-block btn-sm" href="hesabim.html">Profil bilgilerini düzenle</a>
+      </div>
+
+      <div class="set-card">
+        <h3>Görünüm</h3>
+        <div class="sub">Siteyi nasıl görmek istediğinizi seçin.</div>
+        <div class="set-row">
+          <div class="t"><b>Tema</b><small>Açık, karanlık veya sistem ayarı</small></div>
+          <div class="seg" id="themeSeg">
+            <button type="button" data-th="light">Açık</button>
+            <button type="button" data-th="dark">Karanlık</button>
+            <button type="button" data-th="auto">Sistem</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="set-card">
+        <h3>Bildirimler</h3>
+        <div class="sub">Hangi durumlarda haber verelim.</div>
+        <div class="set-row">
+          <div class="t"><b>Yeni proje yayınlandığında</b><small>Yeni bir proje eklendiğinde bildirim alın</small></div>
+          <label class="switch"><input type="checkbox" id="nNew" checked /><span class="track"><span class="knob"></span></span></label>
+        </div>
+        <div class="set-row">
+          <div class="t"><b>Yorumlarıma yanıt geldiğinde</b><small>Birisi yorumunuza cevap yazdığında</small></div>
+          <label class="switch"><input type="checkbox" id="nReply" checked /><span class="track"><span class="knob"></span></span></label>
+        </div>
+        <div class="set-row">
+          <div class="t"><b>E-posta özeti</b><small>Haftalık yeni projeler özeti</small></div>
+          <label class="switch"><input type="checkbox" id="nMail" /><span class="track"><span class="knob"></span></span></label>
+        </div>
+      </div>
+
+      <div class="set-card">
+        <h3>Hesap</h3>
+        <div class="sub">Oturum ve güvenlik işlemleri.</div>
+        <div class="set-row">
+          <div class="t"><b>Oturumu kapat</b><small>Bu cihazdaki oturumu sonlandırır</small></div>
+          <button class="btn btn-danger btn-sm" id="logoutBtn">Çıkış yap</button>
+        </div>
+      </div>
+
+      <p style="text-align:center;font-size:12px;color:var(--muted)">
+        © 2026 ALORA · <a href="index.html">Siteye dön</a> · <a href="LICENSE">MIT Lisansı</a>
+      </p>
+    </div>
+  </main>
+</div>
+
+<div class="save-note" id="saveNote">Kaydedildi</div>
+
+<script src="assets/alora-ui.js"></script>
+<script src="alora-auth.js"></script>
+<script>
+(function () {
+  'use strict';
+  var TH = 'alora.theme';
+  var PREF = 'alora.prefs';
+
+  function prefs() { try { return JSON.parse(localStorage.getItem(PREF) || '{}'); } catch (e) { return {}; } }
+  function setPref(k, v) {
+    var p = prefs(); p[k] = v;
+    try { localStorage.setItem(PREF, JSON.stringify(p)); } catch (e) {}
+  }
+  function note() {
+    var n = document.getElementById('saveNote');
+    n.classList.add('show');
+    clearTimeout(n._t);
+    n._t = setTimeout(function () { n.classList.remove('show'); }, 1600);
+  }
+
+  /* tema */
+  function paintTheme() {
+    var cur = localStorage.getItem(TH) || 'light';
+    document.querySelectorAll('#themeSeg button').forEach(function (b) {
+      b.classList.toggle('on', b.getAttribute('data-th') === cur);
+    });
+  }
+  document.querySelectorAll('#themeSeg button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var v = b.getAttribute('data-th');
+      if (v === 'auto') {
+        var dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        localStorage.setItem(TH, dark ? 'dark' : 'light');
+      } else {
+        localStorage.setItem(TH, v);
+      }
+      var dark2 = localStorage.getItem(TH) === 'dark';
+      if (dark2) document.documentElement.setAttribute('data-theme', 'dark');
+      else document.documentElement.removeAttribute('data-theme');
+      paintTheme(); note();
+    });
+  });
+  paintTheme();
+
+  /* bildirim tercihleri */
+  var p = prefs();
+  ['nNew', 'nReply', 'nMail'].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (p[id] !== undefined) el.checked = !!p[id];
+    el.addEventListener('change', function () { setPref(id, el.checked); note(); });
+  });
+
+  /* hesap */
+  (async function () {
+    var s = await AloraAuth.me().catch(function () { return null; });
+    if (!s || !s.user) { location.replace('giris.html'); return; }
+    var pr = s.profile || {};
+    var name = pr.full_name || pr.username || (s.user.email || '').split('@')[0];
+    document.getElementById('accAv').textContent = (name || '?').charAt(0).toUpperCase();
+    document.getElementById('accName').textContent = name;
+    document.getElementById('accSub').textContent = '@' + (pr.username || '') + ' · ' + AloraAuth.roleLabel(pr.role);
+  })();
+
+  document.getElementById('logoutBtn').addEventListener('click', async function () {
+    await AloraAuth.signOut();
+    location.replace('index.html');
+  });
+})();
+</script>
+</body>
+</html>
