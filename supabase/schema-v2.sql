@@ -173,12 +173,7 @@ returns boolean language sql security definer stable set search_path = public as
   );
 $$;
 
--- indirme sayacı
-create or replace function public.bump_download(p_project uuid)
-returns void language sql security definer as $$
-  update public.projects set downloads = downloads + 1 where id = p_project;
-$$;
-
+-- indirme sayacı: doğrudan tabloda güncellenir (rpc gerekmez)
 -- etkinlik yaz
 create or replace function public.log_activity(p_action text, p_detail text default '', p_actor text default null)
 returns void language plpgsql security definer set search_path = public as $$
@@ -290,31 +285,33 @@ begin
   return r;
 end $$;
 
-create or replace function public.set_member_role(target uuid, new_role text)
+create or replace function public.set_member_role(p_user uuid, p_role text)
 returns void language plpgsql security definer set search_path = public as $$
 begin
   if not public.is_admin() then
     raise exception 'yetkiniz yok';
   end if;
-  if new_role not in ('admin','yetkili','uye') then
+  if p_role not in ('admin','yetkili','uye') then
     raise exception 'gecersiz rol';
   end if;
-  update public.profiles set role = new_role where id = target;
+  update public.profiles set role = p_role where id = p_user;
   insert into public.activity_log (actor, action, detail, user_id)
-  select coalesce(full_name, username), 'rol degisikligi', new_role, auth.uid()
-  from public.profiles where id = auth.uid();
+  select coalesce(p.full_name, p.username), 'rol degisikligi', p_role, auth.uid()
+  from public.profiles p where p.id = auth.uid();
 end $$;
 
-create or replace function public.set_member_ban(target uuid, banned boolean)
+create or replace function public.set_member_ban(p_user uuid, p_banned boolean)
 returns void language plpgsql security definer set search_path = public as $$
 begin
   if not public.is_admin() then
     raise exception 'yetkiniz yok';
   end if;
-  update public.profiles set banned = set_member_ban.banned where id = target;
+  update public.profiles set banned = p_banned where id = p_user;
   insert into public.activity_log (actor, action, detail, user_id)
-  select coalesce(full_name, username), case when set_member_ban.banned then 'uye askiya alindi' else 'uye geri acildi' end, '', auth.uid()
-  from public.profiles where id = auth.uid();
+  select coalesce(p.full_name, p.username),
+         case when p_banned then 'uye askiya alindi' else 'uye geri acildi' end,
+         '', auth.uid()
+  from public.profiles p where p.id = auth.uid();
 end $$;
 
 -- ------------------------------------------------------------
