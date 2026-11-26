@@ -60,7 +60,16 @@
   function renderUserChip() {
     var slot = document.querySelector('[data-user-slot]');
     if (!slot || !window.AloraAuth) return;
-    AloraAuth.me().then(function (s) {
+    // /auth/user köprüsü kapalıysa yerel oturuma düş
+    function fallback() {
+      var sess = window.AloraAuth.session();
+      if (sess && sess.user) return { session: sess, user: sess.user, profile: null };
+      return null;
+    }
+    Promise.resolve()
+      .then(function () { return window.AloraAuth.me(); })
+      .catch(function () { return fallback(); })
+      .then(function (s) {
       if (!s || !s.user) {
         slot.innerHTML =
           '<a class="btn btn-ghost btn-sm" href="giris.html">Giriş</a>' +
@@ -83,7 +92,7 @@
         await AloraAuth.signOut();
         location.reload();
       });
-    });
+      });
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', renderUserChip);
