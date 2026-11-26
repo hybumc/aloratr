@@ -215,6 +215,11 @@
 
     try {
       await AloraAuth.signIn(id, pw, document.getElementById('remember').checked);
+      // iki anahtara da yaz (eski ve yeni kod uyumu)
+      try {
+        var raw = localStorage.getItem('alora.session.v2') || sessionStorage.getItem('alora.session.v2');
+        if (raw) localStorage.setItem('alora.session', raw);
+      } catch (e0) {}
       var s = await AloraAuth.me();
       var p = s && s.profile;
       if (p && p.banned) {
