@@ -6,7 +6,8 @@
   'use strict';
 
   const BASE = (window.AloraAPI && window.AloraAPI.PROXY_URL) || 'https://alora-bridge.bold-yew-bb8.workers.dev';
-  const KEY = (window.AloraAPI && window.AloraAPI.PUBLIC_TOKEN) || '';
+  // public token her durumda tanımlı olsun (alora-api.js yüklenmese bile)
+  const KEY = (window.AloraAPI && window.AloraAPI.PUBLIC_TOKEN) || '41ca9eb5f3a5747a2a6a5c7c9c9a46ddc205eca7274db5ae';
   const SKEY = 'alora.session.v2';
   const RKEY = 'alora.remember';
 
