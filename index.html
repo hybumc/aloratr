@@ -201,7 +201,7 @@ html[data-theme="dark"] .notes-box{background:#0d1721;border-color:#1e2c39}
 .stars-sm button{font-size:20px}
 
 /* band */
-.band{padding:52px 0 84px;background:#fff}
+.band{padding:52px 0 56px;background:#fff}
 .band-inner{position:relative;overflow:hidden;border-radius:24px;padding:46px 40px;text-align:center;background:linear-gradient(135deg,#0f2f52 0%,#1b3a6b 40%,#4a3f8f 100%);box-shadow:var(--shadow-lg)}
 .band-inner::before{content:"";position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.16) 1px,transparent 1px);background-size:26px 26px;opacity:.5;-webkit-mask-image:radial-gradient(ellipse at 50% 0%,#000,transparent 75%);mask-image:radial-gradient(ellipse at 50% 0%,#000,transparent 75%)}
 .band-inner::after{content:"";position:absolute;width:520px;height:520px;right:-140px;top:-220px;border-radius:50%;background:radial-gradient(circle,rgba(18,184,200,.5),transparent 65%);filter:blur(20px);animation:float 16s ease-in-out infinite}
@@ -306,8 +306,6 @@ footer{border-top:1px solid var(--line);background:#fbfdff;padding:44px 0 34px}
 @keyframes toastIn{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
 @keyframes toastOut{to{opacity:0;transform:translateY(10px) scale(.97)}}
 
-.reveal{opacity:0;transform:translateY(24px);transition:opacity .7s var(--ease),transform .7s var(--ease)}
-.reveal.in{opacity:1;transform:none}
 
 @media (max-width:1080px){
   .grid,.skeleton-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -414,7 +412,7 @@ html[data-theme="dark"] .legal-body h4{color:#e8eff6}
 
 
 /* ---- sunucu durumu ---- */
-.status-sec{padding:20px 0 60px}
+.status-sec{padding:8px 0 56px}
 .status-sec .bar-top{margin-bottom:18px}
 .status-sec .bar-top h2{margin:0 0 4px}
 .status-sec .bar-top p{margin:0;color:var(--muted);font-size:14px}
@@ -689,7 +687,7 @@ html[data-theme="dark"] .sp-hero{background:linear-gradient(90deg,rgba(23,178,10
   <!-- NASIL ÇALIŞIR -->
   <section class="band" id="nasil">
     <div class="wrap">
-      <div class="band-inner reveal">
+      <div class="band-inner">
         <h2>Nasıl çalışır?</h2>
         <p>Yetkili hesap projeyi ekler, dosyaları yükler. Ziyaretçiler açar, indirir, puanlar. Tek bir veritabanı, tek bir kütüphane.</p>
         <div class="steps">
@@ -706,8 +704,6 @@ html[data-theme="dark"] .sp-hero{background:linear-gradient(90deg,rgba(23,178,10
       </div>
     </div>
   </section>
-
-  
 
   <!-- SYSTEM STATUS -->
   <section class="status-sec" id="durum">
@@ -823,6 +819,189 @@ html[data-theme="dark"] .sp-hero{background:linear-gradient(90deg,rgba(23,178,10
     </div>
   </div>
 </footer>
+
+<!-- GİRİŞ MODALI -->
+<div class="modal" id="loginModal" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+  <div class="modal-back" data-close-modal></div>
+  <div class="modal-card" style="max-width:420px">
+    <div class="modal-head">
+      <div>
+        <h3 id="loginTitle">Yetkili girişi</h3>
+        <p>Proje eklemek için yetkili hesabınızla giriş yapın.</p>
+      </div>
+      <button class="btn btn-icon" type="button" aria-label="Kapat" data-close-modal style="width:34px;height:34px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <form id="loginForm" novalidate>
+      <div class="field">
+        <label for="lgUser">Kullanıcı adı</label>
+        <input id="lgUser" type="text" autocomplete="username" required />
+      </div>
+      <div class="field">
+        <label for="lgPass">Şifre</label>
+        <input id="lgPass" type="password" autocomplete="current-password" required />
+      </div>
+      <div class="form-error is-hidden" id="loginError"></div>
+      <div class="modal-foot">
+        <button class="btn btn-secondary btn-sm" type="button" data-close-modal>Vazgeç</button>
+        <button class="btn btn-primary btn-sm" type="submit" id="loginSubmit">Giriş Yap</button>
+      </div>
+      <div class="modal-note">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+        <span>Hesabınız yok mu? Yönetici sizin için hesap açar. İndirmek için giriş gerekmez.</span>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- PROJE EKLEME MODALI -->
+<div class="modal" id="addModal" role="dialog" aria-modal="true" aria-labelledby="addTitle">
+  <div class="modal-back" data-close-modal></div>
+  <div class="modal-card" style="max-width:620px">
+    <div class="modal-head">
+      <div>
+        <h3 id="addTitle">Yeni proje ekle</h3>
+        <p>Projenin ne işe yaradığını yazın, EXE ve/veya APK dosyalarını yükleyin.</p>
+      </div>
+      <button class="btn btn-icon" type="button" aria-label="Kapat" data-close-modal style="width:34px;height:34px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+
+    <form id="projectForm" novalidate>
+      <div class="grid-2">
+        <div class="field">
+          <label for="fName">Proje adı *</label>
+          <input id="fName" type="text" placeholder="Örn. Saha Görüntü Analizi" required maxlength="80" />
+        </div>
+        <div class="field">
+          <label for="fVersion">Sürüm</label>
+          <input id="fVersion" type="text" placeholder="1.0.0" maxlength="24" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="fDesc">Ne işe yarar? *</label>
+        <textarea id="fDesc" placeholder="Projenin amacını, kimlerin kullanacağını ve nasıl çalıştığını anlatın." maxlength="2000" style="min-height:92px"></textarea>
+      </div>
+
+      <div class="field">
+        <label for="fTags">Etiketler</label>
+        <input id="fTags" type="text" placeholder="görüntü işleme, yapay zeka, depo" />
+        <span class="hint">Virgülle ayırın (en fazla 6 etiket).</span>
+      </div>
+
+      <div class="field">
+        <label for="fStatus">Durum</label>
+        <select id="fStatus">
+          <option value="yayinda">Yayında (herkes görür)</option>
+          <option value="bakimda">Bakımda (uyarı etiketiyle görünür)</option>
+          <option value="arsiv">Arşiv (yalnızca yetkililer görür)</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="fNotes">Güncelleme notları</label>
+        <textarea id="fNotes" maxlength="4000" placeholder="- Yeni özellikler&#10;- Hata düzeltmeleri" style="min-height:80px"></textarea>
+        <span class="hint">Ziyaretçiler proje detayında görür.</span>
+      </div>
+
+      <div class="uploads">
+        <div class="upload-row">
+          <div class="upload-label">
+            <span class="os-badge win">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M3 5.5 10.5 4.4v7.2H3Zm9 -1.4L21 3v8.6h-9ZM3 12.6h7.5v7.1L3 18.6Zm9 0h9V21l-9-1.3Z"/></svg>
+            </span>
+            <div><strong>Windows (EXE)</strong><small>.exe, .msi, .zip</small></div>
+          </div>
+          <label class="drop" for="fileWindows">
+            <strong>Dosya seç</strong> veya sürükle
+            <span class="fname" data-fname="windows"></span>
+            <input id="fileWindows" type="file" class="is-hidden" data-platform="windows" accept=".exe,.msi,.zip,.msix,.7z" />
+          </label>
+        </div>
+
+        <div class="upload-row">
+          <div class="upload-label">
+            <span class="os-badge and">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M7 9h10a1 1 0 0 1 1 1v8a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2v-8a1 1 0 0 1 1-1Zm-3 .5a1.5 1.5 0 0 1 3 0v6a1.5 1.5 0 0 1-3 0Zm13 0a1.5 1.5 0 0 1 3 0v6a1.5 1.5 0 0 1-3 0ZM9 19.5h1.5v2a1.5 1.5 0 0 1-3 0Zm4.5 0H15v2a1.5 1.5 0 0 1-3 0ZM7.2 7.5c.3-1.8 1.6-3.2 3.3-3.8l-.8-1.4.7-.4.9 1.5a6.4 6.4 0 0 1 3.4 0l.9-1.5.7.4-.8 1.4c1.7.6 3 2 3.3 3.8Zm3-1.4a.7.7 0 1 0 0-1.4.7.7 0 0 0 0 1.4Zm3.6 0a.7.7 0 1 0 0-1.4.7.7 0 0 0 0 1.4Z"/></svg>
+            </span>
+            <div><strong>Android (APK)</strong><small>.apk, .aab, .zip</small></div>
+          </div>
+          <label class="drop" for="fileAndroid">
+            <strong>Dosya seç</strong> veya sürükle
+            <span class="fname" data-fname="android"></span>
+            <input id="fileAndroid" type="file" class="is-hidden" data-platform="android" accept=".apk,.aab,.zip" />
+          </label>
+        </div>
+
+        <div class="upload-row">
+          <div class="upload-label">
+            <span class="os-badge oth">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 7.5A2 2 0 0 1 5.5 5.5h4l2 2.5h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2Z"/></svg>
+            </span>
+            <div><strong>Diğer</strong><small>Linux, macOS, doküman…</small></div>
+          </div>
+          <label class="drop" for="fileOther">
+            <strong>Dosya seç</strong> veya sürükle
+            <span class="fname" data-fname="other"></span>
+            <input id="fileOther" type="file" class="is-hidden" data-platform="other" />
+          </label>
+        </div>
+      </div>
+
+      <div class="form-error is-hidden" id="addError"></div>
+      <div class="modal-foot">
+        <button class="btn btn-secondary btn-sm" type="button" data-close-modal>Vazgeç</button>
+        <button class="btn btn-primary btn-sm" type="submit" id="addSubmit">Projeyi Yayınla</button>
+      </div>
+      <div class="modal-note">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+        <span>Dosyalar sunucudaki veritabanına ve disk alanına kaydedilir. Tek dosya sınırı 200 MB.</span>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- PROJE DETAY MODALI -->
+<div class="modal" id="detailModal" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
+  <div class="modal-back" data-close-modal></div>
+  <div class="modal-card detail-card">
+    <div class="modal-head">
+      <div>
+        <h3 id="detailTitle">Proje</h3>
+        <p id="detailMeta"></p>
+      </div>
+      <button class="btn btn-icon" type="button" aria-label="Kapat" data-close-modal style="width:34px;height:34px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div id="detailBody"></div>
+
+    <div class="detail-comments">
+      <h4>Yorumlar ve öneriler <span id="detailCommentCount" class="mini-count">0</span></h4>
+      <div id="commentList" class="comment-list"><p class="muted-small">Yükleniyor…</p></div>
+
+      <form id="commentForm" class="comment-form">
+        <div class="stars stars-sm" data-stars="detail" role="radiogroup" aria-label="Puan">
+          <button type="button" data-star="1" aria-label="1 yıldız">★</button>
+          <button type="button" data-star="2" aria-label="2 yıldız">★</button>
+          <button type="button" data-star="3" aria-label="3 yıldız">★</button>
+          <button type="button" data-star="4" aria-label="4 yıldız">★</button>
+          <button type="button" data-star="5" aria-label="5 yıldız">★</button>
+          <input type="hidden" class="rating-input" value="0" />
+        </div>
+        <input type="text" class="c-author" maxlength="40" placeholder="Adınız (isteğe bağlı)" />
+        <textarea class="c-body" maxlength="1200" placeholder="İşe yaradı mı? Ne geliştirilebilir?" required></textarea>
+        <button class="btn btn-primary btn-sm" type="submit">Yorumu Gönder</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toasts" aria-live="polite"></div>
+
 
 <script>
 /* tema düğmesi — erken ve garantili bağlama */
@@ -1440,7 +1619,7 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
     const sel = $('#sgProject');
     if (sel) {
       const cur = sel.value;
-      sel.innerHTML = '<option value="">Proje seçin…</option>' +
+      sel.innerHTML = '<option value="">' + (state.projects.length ? 'Proje seçin…' : 'Henüz proje yok') + '</option>' +
         state.projects.map((p) => '<option value="' + p.id + '">' + esc(p.name) + '</option>').join('');
       if (cur) sel.value = cur;
     }
@@ -1764,7 +1943,7 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
     e.preventDefault();
     const projectId = $('#sgProject').value;
     const body = $('#sgBody').value.trim();
-    if (!projectId) { toast('Önce bir proje seçin', 'err'); return; }
+    if (!projectId) { toast(state.projects.length ? 'Önce bir proje seçin' : 'Öneri bırakmak için önce bir proje yayınlanmalı', 'err'); return; }
     if (body.length < 2) { toast('Yorum çok kısa', 'err'); return; }
     const btn = $('#sgSubmit');
     btn.disabled = true;
@@ -1861,8 +2040,6 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
     await loadProjects();
   })();
 })();
-
-
 
 /* ============================================================
    ALORA — sunucu durumu
