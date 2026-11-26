@@ -357,6 +357,11 @@ html[data-theme="dark"] .suggest{background:linear-gradient(180deg,#0a1219,#0b14
 html[data-theme="dark"] .suggest-card{background:#0f1822;border-color:#1e2c39}
 html[data-theme="dark"] .step{background:#0f1822;border-color:#1e2c39}
 html[data-theme="dark"] .status-panel{background:#0f1822;border-color:#1e2c39}
+html[data-theme="dark"] footer{background:#0b131c;border-top-color:#1a2733}
+html[data-theme="dark"] .foot ul a{color:#b7c6d6}
+html[data-theme="dark"] .foot h4{color:#7e8d9d}
+html[data-theme="dark"] .foot-bottom{color:#8794a3;border-top-color:#1a2733}
+html[data-theme="dark"] .foot-brand p{color:#8794a3}
 html[data-theme="dark"] header{background:rgba(8,14,21,.8);border-bottom-color:#1a2733}
 html[data-theme="dark"] .nav-links a.navlink{color:#b7c6d6}
 html[data-theme="dark"] .nav-links a.navlink.active{color:#eaf1f8}
@@ -435,6 +440,12 @@ html[data-theme="dark"] .legal-body h4{color:#e8eff6}
 .sp-state.is-bad{color:#e5484d}
 .sp-sub{font-size:13px;color:var(--muted);line-height:1.5}
 .sp-sub b{color:var(--ink);font-variant-numeric:tabular-nums}
+.sp-bars{display:flex;gap:5px;margin-top:11px;flex-wrap:wrap}
+.sp-bar{display:flex;align-items:center;gap:5px;font-size:10.5px;color:var(--muted);background:var(--bg);border:1px solid var(--line);border-radius:20px;padding:3px 9px 3px 7px;white-space:nowrap}
+.sp-bar i{width:6px;height:6px;border-radius:50%;background:#9aa8b6;flex:0 0 auto}
+.sp-bar.up i{background:#17b26a}
+.sp-bar.down i{background:#e5484d}
+.sp-bar.down{color:#e5484d;border-color:rgba(229,72,77,.3)}
 .sp-list{display:grid;grid-template-columns:1fr 1fr;gap:0}
 .sp-row{display:grid;grid-template-columns:28px 1fr auto 9px;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--line)}
 .sp-row:nth-child(odd){border-right:1px solid var(--line)}
@@ -735,6 +746,7 @@ html[data-theme="dark"] .sp-hero{background:linear-gradient(90deg,rgba(23,178,10
           <div class="sp-hero-txt">
             <div class="sp-state" id="spWord">Ölçülüyor…</div>
             <div class="sp-sub"><b id="spUp">0</b>/<span id="spTotal">6</span> servis ayakta · ort. <b id="spAvg">—</b> · <span id="spTime">—</span></div>
+            <div class="sp-bars" id="spBars"></div>
           </div>
         </div>
         <div class="sp-list">
@@ -2119,6 +2131,15 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
       ring.style.strokeDasharray = c;
       ring.style.strokeDashoffset = done.length ? c * (1 - pct / 100) : c;
       ring.style.stroke = pct === 100 ? '#17b26a' : pct >= 80 ? '#f5a623' : '#e5484d';
+    }
+    var bars = document.getElementById('spBars');
+    if (bars) {
+      var NAMES = { site: 'Site', bridge: 'API', db: 'Veritabanı', auth: 'Giriş', storage: 'Depo', github: 'GitHub' };
+      bars.innerHTML = KEYS.map(function (k) {
+        var r = res[k];
+        var cls = !r ? '' : r.ok ? ' up' : ' down';
+        return '<span class="sp-bar' + cls + '"><i></i>' + NAMES[k] + '</span>';
+      }).join('');
     }
     var set = function (id, v) { var e = document.getElementById(id); if (e) e.textContent = v; };
     set('spPct', done.length ? pct + '%' : '…');
