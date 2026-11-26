@@ -69,14 +69,22 @@ alter table public.projects add column if not exists updated_at  timestamptz not
 -- 3) DOSYALAR
 -- ------------------------------------------------------------
 create table if not exists public.files (
-  id          uuid primary key default gen_random_uuid(),
-  project_id  uuid not null references public.projects(id) on delete cascade,
-  file_name   text not null,
-  file_path   text not null,
-  file_type   text default 'exe',
-  size_bytes  bigint default 0,
-  created_at  timestamptz not null default now()
+  id           uuid primary key default gen_random_uuid(),
+  project_id   uuid not null references public.projects(id) on delete cascade,
+  platform     text default 'windows',
+  name         text,
+  storage_path text,
+  size         bigint default 0,
+  downloads    integer default 0,
+  created_at   timestamptz not null default now()
 );
+
+-- eski şemadan kalan farklı kolon adları
+alter table public.files add column if not exists platform     text default 'windows';
+alter table public.files add column if not exists name         text;
+alter table public.files add column if not exists storage_path text;
+alter table public.files add column if not exists size         bigint default 0;
+alter table public.files add column if not exists downloads    integer default 0;
 
 -- ------------------------------------------------------------
 -- 4) YORUMLAR
@@ -253,7 +261,7 @@ begin
     'indirmeler',    (select coalesce(sum(downloads),0) from public.projects),
     'aktif_oturum',  (select count(*) from public.sessions_log where active and last_seen_at > now() - interval '30 minutes'),
     'bugun_giris',   (select count(distinct user_id) from public.sessions_log where logged_in_at > now() - interval '24 hours'),
-    'depolama_mb',   (select round(coalesce(sum(size_bytes),0)/1048576.0, 1) from public.files),
+    'depolama_mb',   (select round(coalesce(sum(size),0)/1048576.0, 1) from public.files),
     'son_etkinlik',  (select coalesce(jsonb_agg(t), '[]'::jsonb) from (
                         select actor, action, detail, created_at
                         from public.activity_log order by created_at desc limit 12
