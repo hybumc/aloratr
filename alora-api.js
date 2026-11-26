@@ -48,7 +48,6 @@
   async function rest(path, opts) {
     const o = opts || {};
     session = readSession();
-    session = readSession();
     const headers = Object.assign({
       'x-alora-key': PUBLIC_TOKEN,
       ...(session && session.access_token ? { 'x-alora-token': session.access_token } : {})
@@ -148,11 +147,14 @@
 
   async function upload(path, file) {
     session = readSession();
+    if (!session || !session.access_token) {
+      throw new Error('Oturum bulunamadı. Lütfen tekrar giriş yapın.');
+    }
     const res = await fetch(PROXY_URL + '/upload/' + path.split('/').map(encodeURIComponent).join('/'), {
       method: 'POST',
       headers: {
         'x-alora-key': PUBLIC_TOKEN,
-        'x-alora-token': session ? session.access_token : '',
+        'x-alora-token': session.access_token,
         'Content-Type': file.type || 'application/octet-stream'
       },
       body: file
