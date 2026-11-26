@@ -708,8 +708,8 @@ html[data-theme="dark"] .toast{background:#152330;color:#eaf1f8}
     </div>
     <form id="loginForm" novalidate>
       <div class="field">
-        <label for="lgUser">Kullanıcı adı</label>
-        <input id="lgUser" type="text" autocomplete="username" required />
+        <label for="lgUser">E-posta veya kullanıcı adı</label>
+        <input id="lgUser" type="text" autocomplete="username" placeholder="aloratr veya aloratr@alora.app" required />
       </div>
       <div class="field">
         <label for="lgPass">Şifre</label>
@@ -876,12 +876,303 @@ html[data-theme="dark"] .toast{background:#152330;color:#eaf1f8}
 <div class="toast-wrap" id="toasts" aria-live="polite"></div>
 
 <script>
-/* ALORA — arayüz mantığı */
+/* ============================================================
+   ALORA — Supabase istemcisi
+   Güvenlik: bu dosya tarayıcıya gönderilmez. index.html içine
+   sadece PROXY_URL ve PUBLIC_TOKEN gömülür; secret key burada kalır.
+   ============================================================ */
 (function () {
   'use strict';
 
+  /* ---- derleme sırasında doldurulur ---- */
+  const PROXY_URL = 'https://alora-bridge.bold-yew-bb8.workers.dev';
+  const PUBLIC_TOKEN = '41ca9eb5f3a5747a2a6a5c7c9c9a46ddc205eca7274db5ae';
+  const BUCKET = 'proje-dosyalari';
+  const SESSION_KEY = 'alora.session';
+
+  function readSession() {
+    try { return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); }
+    catch (e) { return null; }
+  }
+  function writeSession(s) {
+    try {
+      if (s) localStorage.setItem(SESSION_KEY, JSON.stringify(s));
+      else localStorage.removeItem(SESSION_KEY);
+    } catch (e) {}
+  }
+
+  let session = readSession();
+  if (session && session.expires_at && session.expires_at * 1000 < Date.now()) session = null;
+
+  function qs(obj) {
+    const p = [];
+    Object.keys(obj || {}).forEach((k) => {
+      const v = obj[k];
+      if (v === undefined || v === null) return;
+      p.push(encodeURIComponent(k) + '=' + encodeURIComponent(v));
+    });
+    return p.length ? '?' + p.join('&') : '';
+  }
+
+  /* ---- proxy üzerinden REST ---- */
+  async function rest(path, opts) {
+    const o = opts || {};
+    const headers = Object.assign({
+      'x-alora-key': PUBLIC_TOKEN,
+      'x-alora-token': session ? session.access_token : ''
+    }, o.headers || {});
+    if (o.json !== undefined) {
+      headers['Content-Type'] = 'application/json';
+      headers['Prefer'] = o.prefer || 'return=representation';
+    }
+    const res = await fetch(PROXY_URL + '/rest/' + path, {
+      method: o.method || (o.json !== undefined ? 'POST' : 'GET'),
+      headers,
+      body: o.json !== undefined ? JSON.stringify(o.json) : o.body
+    });
+    const txt = await res.text();
+    let data = null;
+    try { data = txt ? JSON.parse(txt) : null; } catch (e) { data = null; }
+    if (!res.ok) {
+      const msg = (data && (data.message || data.error_description || data.hint)) || ('İstek başarısız (' + res.status + ')');
+      throw new Error(msg);
+    }
+    return data;
+  }
+
+  /* ---- auth ---- */
+  async function signIn(email, password) {
+    const res = await fetch(PROXY_URL + '/auth/token', {
+      method: 'POST',
+      headers: { 'x-alora-key': PUBLIC_TOKEN, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) throw new Error((data && (data.error_description || data.msg || data.message || data.error)) || 'Giriş başarısız');
+    session = {
+      access_token: data.access_token,
+      refresh_token: data.refresh_token,
+      expires_at: Math.floor(Date.now() / 1000) + (data.expires_in || 3600),
+      user: data.user
+    };
+    writeSession(session);
+    return session.user;
+  }
+
+  async function refresh() {
+    if (!session || !session.refresh_token) return null;
+    const res = await fetch(PROXY_URL + '/auth/refresh', {
+      method: 'POST',
+      headers: { 'x-alora-key': PUBLIC_TOKEN, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: session.refresh_token })
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) { session = null; writeSession(null); return null; }
+    session.access_token = data.access_token;
+    session.refresh_token = data.refresh_token;
+    session.expires_at = Math.floor(Date.now() / 1000) + (data.expires_in || 3600);
+    session.user = data.user || session.user;
+    writeSession(session);
+    return session;
+  }
+
+  async function currentUser() {
+    if (!session) return null;
+    if (session.expires_at && session.expires_at * 1000 < Date.now() + 30000) {
+      if (!(await refresh())) return null;
+    }
+    const res = await fetch(PROXY_URL + '/auth/user', {
+      headers: { 'x-alora-key': PUBLIC_TOKEN, 'x-alora-token': session.access_token }
+    });
+    if (!res.ok) { session = null; writeSession(null); return null; }
+    return res.json();
+  }
+
+  async function signOut() {
+    if (session) {
+      try {
+        await fetch(PROXY_URL + '/auth/logout', {
+          method: 'POST',
+          headers: { 'x-alora-key': PUBLIC_TOKEN, 'x-alora-token': session.access_token }
+        });
+      } catch (e) {}
+    }
+    session = null;
+    writeSession(null);
+  }
+
+  async function profile(userId) {
+    const rows = await rest('profiles?id=eq.' + userId + '&select=*');
+    return (rows && rows[0]) || null;
+  }
+
+  /* ---- storage (proxy üzerinden) ---- */
+  function publicUrl(path) {
+    return PROXY_URL + '/file/' + path.split('/').map(encodeURIComponent).join('/');
+  }
+
+  async function upload(path, file) {
+    const res = await fetch(PROXY_URL + '/upload/' + path.split('/').map(encodeURIComponent).join('/'), {
+      method: 'POST',
+      headers: {
+        'x-alora-key': PUBLIC_TOKEN,
+        'x-alora-token': session ? session.access_token : '',
+        'Content-Type': file.type || 'application/octet-stream'
+      },
+      body: file
+    });
+    const txt = await res.text();
+    if (!res.ok) {
+      let msg = 'Dosya yüklenemedi (' + res.status + ')';
+      try { const j = JSON.parse(txt); msg = j.message || j.error || msg; } catch (e) {}
+      throw new Error(msg);
+    }
+    return path;
+  }
+
+  async function remove(path) {
+    try {
+      await fetch(PROXY_URL + '/remove/' + path.split('/').map(encodeURIComponent).join('/'), {
+        method: 'DELETE',
+        headers: { 'x-alora-key': PUBLIC_TOKEN, 'x-alora-token': session ? session.access_token : '' }
+      });
+    } catch (e) {}
+  }
+
+  async function bump(fileId) {
+    try {
+      await fetch(PROXY_URL + '/bump', {
+        method: 'POST',
+        headers: {
+          'x-alora-key': PUBLIC_TOKEN,
+          'x-alora-token': session ? session.access_token : '',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ file_id: fileId })
+      });
+    } catch (e) {}
+  }
+
+  window.AloraAPI = {
+    PROXY_URL, BUCKET,
+    rest, signIn, signOut, currentUser, profile,
+    upload, remove, publicUrl, bump,
+    hasSession: () => !!session,
+    sessionUser: () => (session ? session.user : null)
+  };
+})();
+
+/* ============================================================
+   ALORA — arayüz yardımcıları (modal, tema, toasts, efektler)
+   ============================================================ */
+(function () {
+  'use strict';
   const $ = (sel, root) => (root || document).querySelector(sel);
   const $$ = (sel, root) => Array.prototype.slice.call((root || document).querySelectorAll(sel));
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const state = { user: null };
+
+  /* ---------------- modal yönetimi ---------------- */
+  const modals = ['loginModal', 'addModal', 'detailModal'];
+  let lastFocus = null;
+
+  window.__aloraModalState = state;
+
+  window.openModal = function (id) {
+    if (id === 'addModal' && !window.__aloraUser) {
+      if (window.__aloraToast) window.__aloraToast('Proje eklemek için yetkili girişi yapın', 'err');
+      id = 'loginModal';
+    }
+    lastFocus = document.activeElement;
+    modals.forEach((m) => { const el = $('#' + m); if (el) el.classList.toggle('open', m === id); });
+    document.body.style.overflow = 'hidden';
+    setTimeout(() => {
+      const first = $('#' + id + ' input:not([type=hidden]):not([type=file]), #' + id + ' textarea, #' + id + ' select');
+      if (first) first.focus();
+    }, 80);
+  };
+
+  window.closeModals = function () {
+    modals.forEach((m) => { const el = $('#' + m); if (el) el.classList.remove('open'); });
+    document.body.style.overflow = '';
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  };
+
+  document.addEventListener('click', (e) => {
+    const open = e.target.closest('[data-open-login]');
+    const add = e.target.closest('[data-open-add]');
+    const close = e.target.closest('[data-close-modal]');
+    if (open) { e.preventDefault(); window.openModal('loginModal'); return; }
+    if (add) { e.preventDefault(); window.openModal('addModal'); return; }
+    if (close) { e.preventDefault(); window.closeModals(); }
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') window.closeModals(); });
+
+  /* ---------------- toasts ---------------- */
+  window.__aloraToast = function (msg, kind) {
+    const wrap = $('#toasts');
+    if (!wrap) return;
+    const el = document.createElement('div');
+    el.className = 'toast' + (kind === 'err' ? ' err' : '');
+    const icon = kind === 'err'
+      ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 8v5M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg>'
+      : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+    el.innerHTML = icon + '<span></span>';
+    el.querySelector('span').textContent = msg;
+    wrap.appendChild(el);
+    setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 260); }, 3200);
+  };
+
+  /* ---------------- tema + yıl + ilerleme çubuğu ---------------- */
+  const themeBtn = $('#themeBtn');
+  if (localStorage.getItem('alora.theme') === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+  if (themeBtn) themeBtn.addEventListener('click', () => {
+    const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+    if (dark) document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.setAttribute('data-theme', 'dark');
+    localStorage.setItem('alora.theme', dark ? 'light' : 'dark');
+  });
+
+  const yearEl = $('#year');
+  if (yearEl) yearEl.textContent = new Date().getFullYear();
+
+  const bar = $('#progress');
+  const hdr = $('#hdr');
+  function onScroll() {
+    const h = document.documentElement;
+    const max = h.scrollHeight - h.clientHeight;
+    if (bar) bar.style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + '%';
+    if (hdr) hdr.classList.toggle('scrolled', h.scrollTop > 8);
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+
+  /* ---------------- parçacık efekti ---------------- */
+  const field = $('#particles');
+  if (field && !reduce) {
+    const n = window.innerWidth < 700 ? 14 : 28;
+    let html = '';
+    for (let i = 0; i < n; i++) {
+      const x = Math.random() * 100, y = Math.random() * 100;
+      const s = 1 + Math.random() * 2.4;
+      const d = 6 + Math.random() * 10;
+      html += '<i style="left:' + x + '%;top:' + y + '%;width:' + s + 'px;height:' + s + 'px;animation-duration:' + d + 's;animation-delay:-' + (Math.random() * d) + 's"></i>';
+    }
+    field.innerHTML = html;
+  }
+})();
+
+/* ALORA — arayüz mantığı (Supabase sürümü) */
+(function () {
+  'use strict';
+
+  const API = window.AloraAPI;
+  const openModal = (id) => window.openModal(id);
+  const closeModals = () => window.closeModals();
+
+  const $$ = (sel, root) => Array.prototype.slice.call((root || document).querySelectorAll(sel));
+  const $ = (sel, root) => (root || document).querySelector(sel);
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const state = {
@@ -893,7 +1184,6 @@ html[data-theme="dark"] .toast{background:#152330;color:#eaf1f8}
     sgRating: 0
   };
 
-  /* ---------------- yardımcılar ---------------- */
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const fmtBytes = (n) => {
     if (!n) return '';
@@ -921,80 +1211,19 @@ html[data-theme="dark"] .toast{background:#152330;color:#eaf1f8}
     return '★★★★★'.slice(0, full) + '☆☆☆☆☆'.slice(0, 5 - full);
   };
 
-  async function api(path, opts) {
-    const o = Object.assign({ credentials: 'same-origin', headers: {} }, opts || {});
-    if (o.json !== undefined) {
-      o.method = o.method || 'POST';
-      o.headers['Content-Type'] = 'application/json';
-      o.body = JSON.stringify(o.json);
-      delete o.json;
-    }
-    const res = await fetch(path, o);
-    let data = null;
-    try { data = await res.json(); } catch (e) { data = null; }
-    if (!res.ok) throw new Error((data && data.error) || 'İstek başarısız (' + res.status + ')');
-    return data;
-  }
-
-  function toast(msg, kind) {
-    const wrap = $('#toasts');
-    const el = document.createElement('div');
-    el.className = 'toast' + (kind === 'err' ? ' err' : '');
-    const icon = kind === 'err'
-      ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 8v5M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg>'
-      : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
-    el.innerHTML = icon + '<span>' + esc(msg) + '</span>';
-    wrap.appendChild(el);
-    setTimeout(() => {
-      el.classList.add('out');
-      setTimeout(() => el.remove(), 260);
-    }, 3000);
-  }
-
-  /* ---------------- modal yönetimi ---------------- */
-  const modals = ['loginModal', 'addModal', 'detailModal'];
-  let lastFocus = null;
-
-  function openModal(id) {
-    if (id === 'addModal' && !state.user) {
-      toast('Proje eklemek için yetkili girişi yapın', 'err');
-      id = 'loginModal';
-    }
-    lastFocus = document.activeElement;
-    modals.forEach((m) => $('#' + m).classList.toggle('open', m === id));
-    document.body.style.overflow = 'hidden';
-    setTimeout(() => {
-      const first = $('#' + id + ' input:not([type=hidden]):not([type=file]), #' + id + ' textarea, #' + id + ' select');
-      if (first) first.focus();
-    }, 80);
-  }
-  function closeModals() {
-    modals.forEach((m) => $('#' + m).classList.remove('open'));
-    document.body.style.overflow = '';
-    if (lastFocus && lastFocus.focus) lastFocus.focus();
-  }
-  document.addEventListener('click', (e) => {
-    const open = e.target.closest('[data-open-login]');
-    const add = e.target.closest('[data-open-add]');
-    const close = e.target.closest('[data-close-modal]');
-    if (open) { e.preventDefault(); openModal('loginModal'); return; }
-    if (add) { e.preventDefault(); openModal('addModal'); return; }
-    if (close) { e.preventDefault(); closeModals(); }
-  });
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeModals();
-  });
+  const toast = (msg, kind) => window.__aloraToast(msg, kind);
 
   /* ---------------- oturum ---------------- */
-  function paintUser() {
+  async function paintUser() {
     const chip = $('#userChip');
     const loginBtn = $('#loginBtn');
+    if (!chip || !loginBtn) return;
     if (state.user) {
       chip.classList.remove('is-hidden');
       loginBtn.classList.add('is-hidden');
-      $('#ucName').textContent = state.user.name || state.user.username;
+      $('#ucName').textContent = state.user.full_name || state.user.username;
       $('#ucRole').textContent = state.user.role === 'admin' ? 'yönetici' : 'yetkili';
-      $('#ucAvatar').textContent = initials(state.user.name || state.user.username);
+      $('#ucAvatar').textContent = initials(state.user.full_name || state.user.username);
       $('#addProjectBtn').classList.remove('is-hidden');
       $('#heroAddBtn').classList.remove('is-hidden');
       $('#emptyLoginBtn').textContent = 'Yeni Proje Ekle';
@@ -1013,13 +1242,25 @@ html[data-theme="dark"] .toast{background:#152330;color:#eaf1f8}
 
   async function loadMe() {
     try {
-      const d = await api('/api/me');
-      state.user = d.user;
+      const u = await API.currentUser();
+      if (!u) { state.user = null; }
+      else {
+        const p = await API.profile(u.id);
+        state.user = {
+          id: u.id,
+          email: u.email,
+          username: (p && p.username) || (u.email || '').split('@')[0],
+          full_name: (p && p.full_name) || '',
+          role: (p && p.role) || 'yetkili'
+        };
+      }
     } catch (e) { state.user = null; }
+    window.__aloraUser = state.user;
     paintUser();
   }
 
-  $('#loginForm').addEventListener('submit', async (e) => {
+  const loginForm = $('#loginForm');
+  if (loginForm) loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = $('#loginSubmit');
     const err = $('#loginError');
@@ -1027,17 +1268,19 @@ html[data-theme="dark"] .toast{background:#152330;color:#eaf1f8}
     btn.disabled = true;
     btn.textContent = 'Giriş yapılıyor…';
     try {
-      const d = await api('/api/login', {
-        json: { username: $('#lgUser').value.trim(), password: $('#lgPass').value }
-      });
-      state.user = d.user;
-      paintUser();
-      $('#loginForm').reset();
+      let who = $('#lgUser').value.trim();
+      // kullanıcı adı yazıldıysa e-postaya çevir
+      if (who && who.indexOf('@') === -1) who = who.toLowerCase() + '@alora.app';
+      await API.signIn(who, $('#lgPass').value);
+      await loadMe();
+      loginForm.reset();
       closeModals();
-      toast('Hoş geldiniz, ' + (d.user.name || d.user.username));
+      toast('Hoş geldiniz, ' + (state.user.full_name || state.user.username));
       loadProjects();
     } catch (e2) {
-      err.textContent = e2.message;
+      err.textContent = e2.message === 'Invalid login credentials'
+        ? 'E-posta veya şifre hatalı.'
+        : e2.message;
       err.classList.remove('is-hidden');
     } finally {
       btn.disabled = false;
@@ -1045,19 +1288,20 @@ html[data-theme="dark"] .toast{background:#152330;color:#eaf1f8}
     }
   });
 
-  $('#logoutBtn').addEventListener('click', async () => {
-    try { await api('/api/logout', { method: 'POST' }); } catch (e) {}
+  const logoutBtn = $('#logoutBtn');
+  if (logoutBtn) logoutBtn.addEventListener('click', async () => {
+    await API.signOut();
     state.user = null;
     paintUser();
     toast('Çıkış yapıldı');
     loadProjects();
   });
 
-  /* ---------------- projeleri yükleme ---------------- */
+  /* ---------------- projeler ---------------- */
   function platformBadge(p) {
     if (p === 'windows') return '<span class="os windows">EXE</span>';
     if (p === 'android') return '<span class="os android">APK</span>';
-    return '<span class="os other">' + esc(p === 'other' ? 'Dosya' : p.toUpperCase()) + '</span>';
+    return '<span class="os other">' + esc(p === 'other' ? 'Dosya' : String(p).toUpperCase()) + '</span>';
   }
 
   function visibleProjects() {
@@ -1076,57 +1320,42 @@ html[data-theme="dark"] .toast{background:#152330;color:#eaf1f8}
     const comments = state.projects.reduce((a, p) => a + (p.commentCount || 0), 0);
     const downloads = state.projects.reduce((a, p) => a + (p.downloads || 0), 0);
 
-    $('#libBadge').textContent = total + ' Proje';
-    $('#statProjects').textContent = total ? total + ' proje yayında' : 'Henüz proje yok';
-    $('#statFiles').textContent = files ? files + ' dosya · ' + downloads + ' indirme' : 'Dosya bekleniyor';
-    $('#statComments').textContent = comments ? comments + ' yorum / öneri' : 'İlk yorumu siz yazın';
-    $('#barProjects').style.setProperty('--w', total ? '100%' : '0%');
-    $('#barFiles').style.setProperty('--w', total ? Math.min(100, Math.round(files / total * 100)) + '%' : '0%');
-    $('#barComments').style.setProperty('--w', total ? Math.min(100, Math.round(comments / (total * 5) * 100)) + '%' : '0%');
-    $('#cntAll').textContent = total;
-    $('#footStats').textContent = total + ' proje · ' + files + ' dosya · ' + downloads + ' indirme';
+    const set = (id, v) => { const el = $('#' + id); if (el) el.textContent = v; };
+    set('libBadge', total + ' Proje');
+    set('statProjects', total ? total + ' proje yayında' : 'Henüz proje yok');
+    set('statFiles', files ? files + ' dosya · ' + downloads + ' indirme' : 'Dosya bekleniyor');
+    set('statComments', comments ? comments + ' yorum / öneri' : 'İlk yorumu siz yazın');
+    set('cntAll', total);
+    set('footStats', total + ' proje · ' + files + ' dosya · ' + downloads + ' indirme');
 
     const projSub = $('#projSub');
-    projSub.textContent = total
+    if (projSub) projSub.textContent = total
       ? total + ' proje yayında · ' + files + ' indirilebilir dosya'
       : 'Henüz proje eklenmedi.';
 
     const sel = $('#sgProject');
-    const current = sel.value;
-    sel.innerHTML = total
-      ? state.projects.map((p) => '<option value="' + p.id + '">' + esc(p.name) + '</option>').join('')
-      : '<option value="">Proje yok</option>';
-    if (current) sel.value = current;
+    if (sel) {
+      const cur = sel.value;
+      sel.innerHTML = '<option value="">Proje seçin…</option>' +
+        state.projects.map((p) => '<option value="' + p.id + '">' + esc(p.name) + '</option>').join('');
+      if (cur) sel.value = cur;
+    }
   }
 
   function render() {
-    renderStats();
-
-    const total = state.projects.length;
-    const list = visibleProjects();
     const grid = $('#grid');
-    const empty = $('#emptyState');
-    const none = $('#noResults');
-    const toolbar = $('#toolbar');
-    const skeleton = $('#skeleton');
-    skeleton.classList.add('is-hidden');
-
-    if (total === 0) {
-      empty.classList.remove('is-hidden');
-      toolbar.classList.add('is-hidden');
-      grid.classList.add('is-hidden');
-      none.classList.add('is-hidden');
+    if (!grid) return;
+    const list = visibleProjects();
+    if (!list.length) {
+      grid.innerHTML = '<div class="empty">' +
+        '<h3>Henüz proje yok</h3>' +
+        '<p>Yetkili hesapla giriş yapıp ilk projeyi ekleyin. Herkes indirebilir, giriş gerekmez.</p>' +
+        '<button class="btn btn-primary" type="button" id="emptyLoginBtn" data-open-login>Yetkili Girişi</button>' +
+        '</div>';
+      paintUser();
+      renderStats();
       return;
     }
-    empty.classList.add('is-hidden');
-    toolbar.classList.remove('is-hidden');
-
-    if (list.length === 0) {
-      grid.classList.add('is-hidden');
-      none.classList.remove('is-hidden');
-      return;
-    }
-    none.classList.add('is-hidden');
     grid.classList.remove('is-hidden');
 
     grid.innerHTML = list.map((p, i) => {
@@ -1139,8 +1368,7 @@ html[data-theme="dark"] .toast{background:#152330;color:#eaf1f8}
       const tags = (p.tags || []).slice(0, 4).map((t) => '<span class="tag">' + esc(t) + '</span>').join('');
       const first = (p.files || [])[0];
       const dl = first
-        ? '<a class="btn btn-primary btn-sm" href="/api/download/' + first.id + '">' +
-          '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="M7.5 10.5 12 15l4.5-4.5"/><path d="M5 20h14"/></svg>İndir</a>'
+        ? '<a class="btn btn-primary btn-sm" href="' + esc(API.publicUrl(first.storage_path)) + '" data-dl="' + first.id + '" target="_blank" rel="noopener">İndir</a>'
         : '<button class="btn btn-secondary btn-sm is-disabled" type="button" disabled>Dosya yok</button>';
       const anim = reduce ? '' : 'style="animation:panelIn .5s cubic-bezier(.2,.8,.3,1) ' + (i * 55) + 'ms both"';
       return '' +
@@ -1157,22 +1385,33 @@ html[data-theme="dark"] .toast{background:#152330;color:#eaf1f8}
           '<p class="p-desc">' + (p.description ? esc(p.description) : '<span style="color:#a3b0be">Açıklama eklenmedi.</span>') + '</p>' +
           (tags ? '<div class="tags">' + tags + '</div>' : '') +
           '<div class="p-meta" style="margin:0">' + plats +
-            '<span class="sep"></span><span>' + p.commentCount + ' yorum</span>' +
-            '<span class="sep"></span><span>' + p.downloads + ' indirme</span>' +
+            '<span class="sep"></span><span>' + (p.commentCount || 0) + ' yorum</span>' +
+            '<span class="sep"></span><span>' + (p.downloads || 0) + ' indirme</span>' +
           '</div>' +
           '<div class="p-actions">' + dl +
             '<button class="btn btn-secondary btn-sm" type="button" data-detail="' + p.id + '">Detay</button>' +
-            (state.user ? '<button class="btn btn-icon" type="button" data-remove="' + p.id + '" title="Projeyi sil" aria-label="Projeyi sil" style="width:36px;height:36px;flex:0 0 auto">' +
-              '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7"/><path d="M6.5 7l.8 12a2 2 0 0 0 2 1.9h5.4a2 2 0 0 0 2-1.9L17.5 7"/></svg></button>' : '') +
+            (state.user ? '<button class="btn btn-icon" type="button" data-remove="' + p.id + '" title="Projeyi sil" aria-label="Projeyi sil" style="width:36px;height:36px;flex:0 0 auto">✕</button>' : '') +
           '</div>' +
         '</article>';
     }).join('');
+
+    paintUser();
+    renderStats();
   }
 
   async function loadProjects() {
     try {
-      const d = await api('/api/projects');
-      state.projects = d.projects || [];
+      const rows = await API.rest('projects?select=*,files(*),comments(id)&order=created_at.desc');
+      state.projects = (rows || []).map((p) => {
+        const files = (p.files || []).map((f) => Object.assign({}, f, { sizeText: fmtBytes(f.size) }));
+        const ratings = (p.comments || []).length;
+        return Object.assign({}, p, {
+          files,
+          platforms: (p.platforms && p.platforms.length) ? p.platforms : files.map((f) => f.platform),
+          commentCount: ratings,
+          rating: 0
+        });
+      });
     } catch (e) {
       state.projects = [];
       toast('Projeler yüklenemedi: ' + e.message, 'err');
@@ -1189,12 +1428,14 @@ html[data-theme="dark"] .toast{background:#152330;color:#eaf1f8}
       render();
     });
   });
-  $('#searchInput').addEventListener('input', function () {
+  const searchInput = $('#searchInput');
+  if (searchInput) searchInput.addEventListener('input', function () {
     state.query = this.value.trim();
     render();
   });
-  $('#clearFilters').addEventListener('click', () => {
-    $('#searchInput').value = '';
+  const clearFilters = $('#clearFilters');
+  if (clearFilters) clearFilters.addEventListener('click', () => {
+    if (searchInput) searchInput.value = '';
     state.query = '';
     state.platform = 'all';
     $$('.chip').forEach((x) => x.setAttribute('aria-pressed', x.getAttribute('data-platform') === 'all' ? 'true' : 'false'));
@@ -1202,35 +1443,42 @@ html[data-theme="dark"] .toast{background:#152330;color:#eaf1f8}
   });
 
   /* ---------------- kart işlemleri ---------------- */
-  $('#grid').addEventListener('click', async (e) => {
-    const det = e.target.closest('[data-detail]');
-    if (det) return openDetail(Number(det.getAttribute('data-detail')));
+  const gridEl = $('#grid');
+  if (gridEl) {
+    gridEl.addEventListener('click', async (e) => {
+      const dl = e.target.closest('[data-dl]');
+      if (dl) { API.bump(Number(dl.getAttribute('data-dl'))); return; }
 
-    const rm = e.target.closest('[data-remove]');
-    if (rm) {
-      const id = Number(rm.getAttribute('data-remove'));
-      const p = state.projects.find((x) => x.id === id);
-      if (!p) return;
-      if (!window.confirm('"' + p.name + '" projesi ve dosyaları silinsin mi?')) return;
-      try {
-        await api('/api/projects/' + id, { method: 'DELETE' });
-        toast('Proje silindi');
-        await loadProjects();
-      } catch (e2) { toast(e2.message, 'err'); }
-    }
-  });
+      const det = e.target.closest('[data-detail]');
+      if (det) return openDetail(Number(det.getAttribute('data-detail')));
+
+      const rm = e.target.closest('[data-remove]');
+      if (rm) {
+        const id = Number(rm.getAttribute('data-remove'));
+        const p = state.projects.find((x) => x.id === id);
+        if (!p) return;
+        if (!window.confirm('"' + p.name + '" projesi ve dosyaları silinsin mi?')) return;
+        try {
+          for (const f of (p.files || [])) await API.remove(f.storage_path);
+          await API.rest('projects?id=eq.' + id, { method: 'DELETE', headers: { Prefer: 'return=minimal' } });
+          toast('Proje silindi');
+          await loadProjects();
+        } catch (e2) { toast(e2.message, 'err'); }
+      }
+    });
+  }
 
   /* ---------------- proje ekleme ---------------- */
   const fileInputs = $$('#addModal input[type=file]');
   fileInputs.forEach((input) => {
-    const platform = input.getAttribute('data-platform');
     const label = input.closest('.drop');
-    const fname = label.querySelector('[data-fname]');
+    const fname = label ? label.querySelector('[data-fname]') : null;
     const paint = () => {
       const f = input.files && input.files[0];
-      fname.textContent = f ? f.name + ' · ' + fmtBytes(f.size) : '';
+      if (fname) fname.textContent = f ? f.name + ' · ' + fmtBytes(f.size) : '';
     };
     input.addEventListener('change', paint);
+    if (!label) return;
     ['dragenter', 'dragover'].forEach((ev) => label.addEventListener(ev, (ev2) => { ev2.preventDefault(); label.classList.add('dragover'); }));
     ['dragleave', 'drop'].forEach((ev) => label.addEventListener(ev, (ev2) => { ev2.preventDefault(); label.classList.remove('dragover'); }));
     label.addEventListener('drop', (ev2) => {
@@ -1240,42 +1488,56 @@ html[data-theme="dark"] .toast{background:#152330;color:#eaf1f8}
     });
   });
 
-  $('#projectForm').addEventListener('submit', async (e) => {
+  const projectForm = $('#projectForm');
+  if (projectForm) projectForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const err = $('#addError');
     err.classList.add('is-hidden');
+    if (!state.user) { err.textContent = 'Yetkili girişi gerekli.'; err.classList.remove('is-hidden'); return; }
+
     const name = $('#fName').value.trim();
     const desc = $('#fDesc').value.trim();
     if (name.length < 2) { err.textContent = 'Proje adı en az 2 karakter olmalı.'; err.classList.remove('is-hidden'); $('#fName').focus(); return; }
     if (desc.length < 5) { err.textContent = 'Projenin ne işe yaradığını yazın (en az 5 karakter).'; err.classList.remove('is-hidden'); $('#fDesc').focus(); return; }
 
-    const fd = new FormData();
-    fd.append('name', name);
-    fd.append('description', desc);
-    fd.append('tags', $('#fTags').value);
-    fd.append('version', $('#fVersion').value.trim() || '1.0.0');
-    fd.append('status', $('#fStatus').value);
-    fd.append('release_notes', $('#fNotes').value);
-
-    let hasFile = false;
+    const picked = [];
     fileInputs.forEach((input) => {
-      if (input.files && input.files[0]) {
-        hasFile = true;
-        fd.append('files[' + input.getAttribute('data-platform') + ']', input.files[0], input.files[0].name);
-      }
+      if (input.files && input.files[0]) picked.push({ platform: input.getAttribute('data-platform') || 'other', file: input.files[0] });
     });
-    if (!hasFile) {
-      err.textContent = 'En az bir dosya (EXE veya APK) seçin.';
-      err.classList.remove('is-hidden');
-      return;
-    }
+    if (!picked.length) { err.textContent = 'En az bir dosya (EXE veya APK) seçin.'; err.classList.remove('is-hidden'); return; }
 
     const btn = $('#addSubmit');
     btn.disabled = true;
     btn.textContent = 'Yükleniyor…';
     try {
-      await api('/api/projects', { method: 'POST', body: fd });
-      $('#projectForm').reset();
+      const tags = $('#fTags').value.split(',').map((t) => t.trim()).filter(Boolean);
+      const rows = await API.rest('projects', {
+        json: {
+          name,
+          description: desc,
+          tags,
+          platforms: picked.map((p) => p.platform),
+          version: $('#fVersion').value.trim() || '1.0.0',
+          status: $('#fStatus').value,
+          release_notes: $('#fNotes').value,
+          created_by: state.user.id,
+          author: state.user.full_name || state.user.username
+        }
+      });
+      const project = Array.isArray(rows) ? rows[0] : rows;
+      const projectId = project.id;
+
+      for (const p of picked) {
+        const safe = p.file.name.replace(/[^\w.\-]+/g, '_');
+        const path = projectId + '/' + Date.now() + '-' + safe;
+        btn.textContent = 'Dosya yükleniyor… (' + safe + ')';
+        await API.upload(path, p.file);
+        await API.rest('files', {
+          json: { project_id: projectId, platform: p.platform, name: p.file.name, storage_path: path, size: p.file.size }
+        });
+      }
+
+      projectForm.reset();
       $$('[data-fname]').forEach((el) => { el.textContent = ''; });
       closeModals();
       toast('Proje yayınlandı');
@@ -1305,8 +1567,8 @@ html[data-theme="dark"] .toast{background:#152330;color:#eaf1f8}
       '<div class="dl-row">' +
         platformBadge(f.platform) +
         '<div class="dl-main"><div class="dl-name">' + esc(f.name) + '</div>' +
-          '<div class="dl-sub">' + f.sizeText + ' · ' + f.downloads + ' indirme</div></div>' +
-        '<a class="btn btn-primary btn-sm" href="/api/download/' + f.id + '">İndir</a>' +
+          '<div class="dl-sub">' + (f.sizeText || fmtBytes(f.size)) + ' · ' + (f.downloads || 0) + ' indirme</div></div>' +
+        '<a class="btn btn-primary btn-sm" href="' + esc(API.publicUrl(f.storage_path)) + '" data-dl="' + f.id + '" target="_blank" rel="noopener">İndir</a>' +
       '</div>'
     ).join('');
 
@@ -1327,7 +1589,7 @@ html[data-theme="dark"] .toast{background:#152330;color:#eaf1f8}
     const star = c.rating ? '<span class="stars-mini">' + stars(c.rating) + '</span>' : '';
     return '<div class="comment">' +
       '<div class="comment-head"><strong>' + esc(c.author) + '</strong>' +
-        (c.isStaff ? '<span class="staff">yetkili</span>' : '') +
+        (c.is_staff ? '<span class="staff">yetkili</span>' : '') +
         star +
         '<time>' + fmtDateTime(c.created_at) + '</time>' +
       '</div><p>' + esc(c.body) + '</p></div>';
@@ -1336,8 +1598,8 @@ html[data-theme="dark"] .toast{background:#152330;color:#eaf1f8}
   async function loadComments(id) {
     const list = $('#commentList');
     try {
-      const d = await api('/api/projects/' + id + '/comments');
-      const items = d.comments || [];
+      const rows = await API.rest('comments?project_id=eq.' + id + '&select=*&order=created_at.desc');
+      const items = rows || [];
       $('#detailCommentCount').textContent = items.length;
       list.innerHTML = items.length ? items.map(commentHtml).join('') : '<p class="muted-small">Henüz yorum yok. İlk öneriyi siz yazın.</p>';
     } catch (e) {
@@ -1345,8 +1607,8 @@ html[data-theme="dark"] .toast{background:#152330;color:#eaf1f8}
     }
   }
 
-  /* yıldız seçimi */
   function bindStars(root, onChange) {
+    if (!root) return { reset() {} };
     const buttons = $$('button[data-star]', root);
     const input = $('input[type=hidden]', root);
     let value = 0;
@@ -1354,20 +1616,21 @@ html[data-theme="dark"] .toast{background:#152330;color:#eaf1f8}
     buttons.forEach((b) => {
       b.addEventListener('click', () => {
         value = Number(b.getAttribute('data-star'));
-        input.value = String(value);
+        if (input) input.value = String(value);
         paint();
         if (onChange) onChange(value);
       });
       b.addEventListener('mouseenter', () => buttons.forEach((x) => x.classList.toggle('on', Number(x.getAttribute('data-star')) <= Number(b.getAttribute('data-star')))));
     });
     root.addEventListener('mouseleave', paint);
-    return { get value() { return value; }, reset() { value = 0; input.value = '0'; paint(); } };
+    return { get value() { return value; }, reset() { value = 0; if (input) input.value = '0'; paint(); } };
   }
 
   const sgStars = bindStars($('#starRow'), (v) => { state.sgRating = v; });
   const detailStars = bindStars($('#detailModal .stars'), () => {});
 
-  $('#suggestForm').addEventListener('submit', async (e) => {
+  const suggestForm = $('#suggestForm');
+  if (suggestForm) suggestForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const projectId = $('#sgProject').value;
     const body = $('#sgBody').value.trim();
@@ -1377,10 +1640,17 @@ html[data-theme="dark"] .toast{background:#152330;color:#eaf1f8}
     btn.disabled = true;
     btn.textContent = 'Gönderiliyor…';
     try {
-      await api('/api/projects/' + projectId + '/comments', {
-        json: { body, author: $('#sgName').value.trim(), rating: Number($('#sgRating').value) || 0 }
+      await API.rest('comments', {
+        json: {
+          project_id: Number(projectId),
+          body,
+          author: $('#sgName').value.trim() || 'Ziyaretçi',
+          rating: Number($('#sgRating').value) || 0,
+          is_staff: !!state.user,
+          user_id: state.user ? state.user.id : null
+        }
       });
-      $('#suggestForm').reset();
+      suggestForm.reset();
       sgStars.reset();
       toast('Teşekkürler! Öneriniz kaydedildi.');
       await loadProjects();
@@ -1392,17 +1662,21 @@ html[data-theme="dark"] .toast{background:#152330;color:#eaf1f8}
     }
   });
 
-  $('#commentForm').addEventListener('submit', async (e) => {
+  const commentForm = $('#commentForm');
+  if (commentForm) commentForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const body = $('.c-body', e.target).value.trim();
     if (body.length < 2) { toast('Yorum çok kısa', 'err'); return; }
     if (!state.detailId) return;
     try {
-      await api('/api/projects/' + state.detailId + '/comments', {
+      await API.rest('comments', {
         json: {
+          project_id: state.detailId,
           body,
-          author: $('.c-author', e.target).value.trim(),
-          rating: Number($('.rating-input', e.target).value) || 0
+          author: $('.c-author', e.target).value.trim() || (state.user ? (state.user.full_name || state.user.username) : 'Ziyaretçi'),
+          rating: Number($('.rating-input', e.target).value) || 0,
+          is_staff: !!state.user,
+          user_id: state.user ? state.user.id : null
         }
       });
       $('.c-body', e.target).value = '';
@@ -1414,13 +1688,16 @@ html[data-theme="dark"] .toast{background:#152330;color:#eaf1f8}
   });
 
   /* ---------------- yönetim özeti ---------------- */
-  $('#adminStatsLink').addEventListener('click', async (e) => {
+  const adminLink = $('#adminStatsLink');
+  if (adminLink) adminLink.addEventListener('click', async (e) => {
     e.preventDefault();
     if (!state.user) { openModal('loginModal'); return; }
-    try {
-      const s = await api('/api/admin/stats');
-      toast(s.projects + ' proje · ' + s.files + ' dosya (' + s.bytesText + ') · ' + s.downloads + ' indirme · ' + s.comments + ' yorum · ' + s.users + ' kullanıcı');
-    } catch (e2) { toast(e2.message, 'err'); }
+    const total = state.projects.length;
+    const files = state.projects.reduce((a, p) => a + (p.files ? p.files.length : 0), 0);
+    const bytes = state.projects.reduce((a, p) => a + (p.files || []).reduce((b, f) => b + (f.size || 0), 0), 0);
+    const downloads = state.projects.reduce((a, p) => a + (p.downloads || 0), 0);
+    const comments = state.projects.reduce((a, p) => a + (p.commentCount || 0), 0);
+    toast(total + ' proje · ' + files + ' dosya (' + fmtBytes(bytes) + ') · ' + downloads + ' indirme · ' + comments + ' yorum');
   });
 
   /* ---------------- görsel efektler ---------------- */
@@ -1429,36 +1706,12 @@ html[data-theme="dark"] .toast{background:#152330;color:#eaf1f8}
   function onScroll() {
     const h = document.documentElement;
     const max = h.scrollHeight - h.clientHeight;
-    bar.style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + '%';
-    hdr.classList.toggle('scrolled', h.scrollTop > 8);
+    if (bar) bar.style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + '%';
+    if (hdr) hdr.classList.toggle('scrolled', h.scrollTop > 8);
   }
   window.addEventListener('scroll', onScroll, { passive: true });
   onScroll();
 
-  const field = $('#particles');
-  if (field && !reduce) {
-    for (let i = 0; i < 22; i++) {
-      const p = document.createElement('i');
-      const s = 2 + Math.random() * 4;
-      p.style.width = p.style.height = s.toFixed(1) + 'px';
-      p.style.left = (Math.random() * 100).toFixed(2) + '%';
-      p.style.top = (55 + Math.random() * 45).toFixed(2) + '%';
-      p.style.animationDuration = (9 + Math.random() * 10).toFixed(1) + 's';
-      p.style.animationDelay = (-Math.random() * 14).toFixed(1) + 's';
-      p.style.opacity = (0.3 + Math.random() * 0.5).toFixed(2);
-      field.appendChild(p);
-    }
-  }
-
-  const reveals = $$('.reveal');
-  if ('IntersectionObserver' in window && !reduce) {
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach((en) => { if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); } });
-    }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
-    reveals.forEach((el) => io.observe(el));
-  } else reveals.forEach((el) => el.classList.add('in'));
-
-  /* tema */
   const themeBtn = $('#themeBtn');
   const savedTheme = localStorage.getItem('alora.theme');
   if (savedTheme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
@@ -1469,7 +1722,8 @@ html[data-theme="dark"] .toast{background:#152330;color:#eaf1f8}
     localStorage.setItem('alora.theme', dark ? 'light' : 'dark');
   });
 
-  $('#year').textContent = new Date().getFullYear();
+  const yearEl = $('#year');
+  if (yearEl) yearEl.textContent = new Date().getFullYear();
 
   /* ---------------- başlat ---------------- */
   (async function init() {
