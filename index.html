@@ -1613,7 +1613,7 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
   const state = { user: null };
 
   /* ---------------- modal yönetimi ---------------- */
-  const modals = ['loginModal', 'addModal', 'detailModal'];
+  const modals = ['loginModal', 'addModal', 'detailModal', 'editModal'];
   let lastFocus = null;
 
   window.__aloraModalState = state;
@@ -1624,8 +1624,18 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
       id = 'loginModal';
     }
     lastFocus = document.activeElement;
-    modals.forEach((m) => { const el = $('#' + m); if (el) el.classList.toggle('open', m === id); });
+    modals.forEach((m) => {
+      const el = $('#' + m);
+      if (!el) return;
+      el.classList.remove('open');
+      el.style.display = '';
+    });
+    const target = $('#' + id);
+    if (!target) return;
+    target.style.display = 'flex';
+    target.classList.add('open');
     document.body.style.overflow = 'hidden';
+    document.body.style.paddingRight = '';
     setTimeout(() => {
       const first = $('#' + id + ' input:not([type=hidden]):not([type=file]), #' + id + ' textarea, #' + id + ' select');
       if (first) first.focus();
@@ -1633,8 +1643,14 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
   };
 
   window.closeModals = function () {
-    modals.forEach((m) => { const el = $('#' + m); if (el) el.classList.remove('open'); });
+    modals.forEach((m) => {
+      const el = $('#' + m);
+      if (!el) return;
+      el.classList.remove('open');
+      el.style.display = '';
+    });
     document.body.style.overflow = '';
+    document.body.style.paddingRight = '';
     if (lastFocus && lastFocus.focus) lastFocus.focus();
   };
 
@@ -1957,14 +1973,15 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
     const set = (id, v) => { const el = $('#' + id); if (el) el.textContent = v; };
     set('libBadge', total + ' Proje');
     set('statProjects', total ? total + ' proje yayında' : 'Henüz proje yok');
-    set('statFiles', files ? files + ' dosya · ' + downloads + ' indirme' : 'Dosya bekleniyor');
+    const bytes = state.projects.reduce((a, p) => a + (p.files || []).reduce((b, f) => b + (Number(f.size) || 0), 0), 0);
+    set('statFiles', files ? files + ' dosya · ' + fmtBytes(bytes) + ' · ' + downloads + ' indirme' : 'Dosya bekleniyor');
     set('statComments', comments ? comments + ' yorum / öneri' : 'İlk yorumu siz yazın');
     set('cntAll', total);
     set('footStats', total + ' proje · ' + files + ' dosya · ' + downloads + ' indirme');
 
     const projSub = $('#projSub');
     if (projSub) projSub.textContent = total
-      ? total + ' proje yayında · ' + files + ' indirilebilir dosya'
+      ? total + ' proje yayında · ' + files + ' indirilebilir dosya · ' + fmtBytes(bytes)
       : 'Henüz proje eklenmedi.';
 
     const sel = $('#sgProject');
@@ -2027,9 +2044,20 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
       const plats = (p.platforms || []).map(platformBadge).join('');
       const tags = (p.tags || []).slice(0, 4).map((t) => '<span class="tag">' + esc(t) + '</span>').join('');
       const first = (p.files || [])[0];
-      const dl = first
-        ? '<a class="btn btn-primary btn-sm" href="' + esc(API.publicUrl(first.storage_path, first.parts)) + '" data-dl="' + first.id + '" target="_blank" rel="noopener">İndir</a>'
-        : '<button class="btn btn-secondary btn-sm is-disabled" type="button" disabled>Dosya yok</button>';
+      const bakim = p.status === 'bakimda';
+      const arsiv = p.status === 'arsiv';
+      let dl;
+      if (!first) {
+        dl = '<button class="btn btn-secondary btn-sm is-disabled" type="button" disabled>Dosya yok</button>';
+      } else if (bakim) {
+        dl = '<button class="btn btn-secondary btn-sm is-disabled" type="button" disabled title="Proje bakımda — indirme kapalı">Bakımda</button>';
+      } else if (arsiv && !isStaff()) {
+        dl = '<button class="btn btn-secondary btn-sm is-disabled" type="button" disabled>Arşivde</button>';
+      } else {
+        dl = '<a class="btn btn-primary btn-sm" href="' + esc(API.publicUrl(first.storage_path, first.parts)) + '" data-dl="' + first.id + '" target="_blank" rel="noopener">İndir</a>';
+      }
+      const totalBytes = (p.files || []).reduce((a, f) => a + (Number(f.size) || 0), 0);
+      const sizeTxt = totalBytes ? fmtBytes(totalBytes) : '';
       const anim = reduce ? '' : 'style="animation:panelIn .5s cubic-bezier(.2,.8,.3,1) ' + (i * 55) + 'ms both"';
       return '' +
         '<article class="p-card" data-id="' + p.id + '" ' + anim + '>' +
@@ -2047,10 +2075,12 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
           '<div class="p-meta" style="margin:0">' + plats +
             '<span class="sep"></span><span>' + (p.commentCount || 0) + ' yorum</span>' +
             '<span class="sep"></span><span>' + (p.downloads || 0) + ' indirme</span>' +
+            (sizeTxt ? '<span class="sep"></span><span class="p-size">' + sizeTxt + '</span>' : '') +
           '</div>' +
           '<div class="p-actions">' + dl +
             '<button class="btn btn-secondary btn-sm" type="button" data-detail="' + p.id + '">Detay</button>' +
             (isStaff() ? '<button class="btn btn-secondary btn-sm" type="button" data-edit="' + p.id + '">Düzenle</button>' : '') +
+            (isStaff() ? '<button class="btn btn-secondary btn-sm" type="button" data-toggle-status="' + p.id + '">' + (bakim ? 'Yayına al' : 'Bakıma al') + '</button>' : '') +
             (isStaff() ? '<button class="btn btn-icon" type="button" data-remove="' + p.id + '" title="Projeyi sil" aria-label="Projeyi sil" style="width:36px;height:36px;flex:0 0 auto">✕</button>' : '') +
           '</div>' +
         '</article>';
@@ -2119,6 +2149,25 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
 
       const ed = e.target.closest('[data-edit]');
       if (ed) { e.preventDefault(); openEdit(Number(ed.getAttribute('data-edit'))); return; }
+
+      const tg = e.target.closest('[data-toggle-status]');
+      if (tg) {
+        e.preventDefault();
+        if (!isStaff()) return;
+        const id2 = Number(tg.getAttribute('data-toggle-status'));
+        const p2 = state.projects.find((x) => x.id === id2);
+        if (!p2) return;
+        const yeni = p2.status === 'bakimda' ? 'yayinda' : 'bakimda';
+        tg.disabled = true;
+        try {
+          await API.rest('projects?id=eq.' + id2, { method: 'PATCH', prefer: 'return=minimal', json: { status: yeni } });
+          p2.status = yeni;
+          toast(yeni === 'bakimda' ? 'Proje bakıma alındı — indirme kapandı' : 'Proje yayına alındı');
+          render();
+          await loadProjects();
+        } catch (e5) { toast(e5.message, 'err'); tg.disabled = false; }
+        return;
+      }
 
       const df = e.target.closest('[data-delfile]');
       if (df) {
@@ -2319,7 +2368,9 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
         '<div class="dl-main"><div class="dl-name">' + esc(f.name) + '</div>' +
           '<div class="dl-sub">' + (f.sizeText || fmtBytes(f.size)) + ' · ' + (f.downloads || 0) + ' indirme</div></div>' +
         '<span class="dl-size">' + fmtBytes(f.size) + '</span>' +
-        '<a class="btn btn-primary btn-sm" href="' + esc(API.publicUrl(f.storage_path, f.parts)) + '" data-dl="' + f.id + '" target="_blank" rel="noopener">İndir</a>' +
+        (p.status === 'bakimda'
+          ? '<button class="btn btn-secondary btn-sm is-disabled" type="button" disabled title="Proje bakımda">Bakımda</button>'
+          : '<a class="btn btn-primary btn-sm" href="' + esc(API.publicUrl(f.storage_path, f.parts)) + '" data-dl="' + f.id + '" target="_blank" rel="noopener">İndir</a>') +
         (isStaff() ? '<button class="btn btn-icon" type="button" data-delfile="' + f.id + '" title="Dosyayı sil" style="width:34px;height:34px">✕</button>' : '') +
       '</div>'
     ).join('');
@@ -2753,27 +2804,37 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
     },
     bridge: function () {
       return timed(function () {
-        function once() {
+        function get(url, asJson) {
           var ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
-          var to = setTimeout(function () { if (ctl) ctl.abort(); }, 8000);
-          return fetch(BASE + '/health?t=' + Date.now(), {
+          var to = setTimeout(function () { if (ctl) ctl.abort(); }, 9000);
+          return fetch(url, {
             cache: 'no-store',
             headers: { 'x-alora-key': KEY },
             signal: ctl ? ctl.signal : undefined
           }).then(function (r) {
             clearTimeout(to);
-            return r.text().then(function (txt) {
-              try { var j = JSON.parse(txt); return r.ok && j && j.ok === true; } catch (e) { return false; }
-            });
-          }).catch(function (e) { clearTimeout(to); throw e; });
+            if (!r.ok) return false;
+            if (!asJson) return true;
+            return r.text().then(function (t) { try { var j = JSON.parse(t); return !!(j && j.ok === true); } catch (e) { return false; } });
+          }).catch(function (e) { clearTimeout(to); return false; });
         }
-        return once().catch(function () { return new Promise(function (res) { setTimeout(res, 800); }).then(once); });
+        // 1) /health  2) /health tekrar  3) /rest/projects yedek kontrol
+        return get(BASE + '/health?t=' + Date.now(), true).then(function (ok1) {
+          if (ok1) return true;
+          return new Promise(function (r) { setTimeout(r, 700); })
+            .then(function () { return get(BASE + '/health?t=' + Date.now(), true); })
+            .then(function (ok2) { return ok2 ? true : get(BASE + '/rest/projects?select=id&limit=1&t=' + Date.now(), false); });
+        });
       });
     },
     db: function () {
       return timed(function () {
-        return fetch(BASE + '/rest/projects?select=id&limit=1', { cache: 'no-store', headers: { 'x-alora-key': KEY } })
-          .then(function (r) { return r.ok; });
+        var ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+        var to = setTimeout(function () { if (ctl) ctl.abort(); }, 9000);
+        return fetch(BASE + '/rest/projects?select=id&limit=1&t=' + Date.now(), {
+          cache: 'no-store', headers: { 'x-alora-key': KEY }, signal: ctl ? ctl.signal : undefined
+        }).then(function (r) { clearTimeout(to); return r.ok; })
+          .catch(function () { clearTimeout(to); return false; });
       });
     },
     auth: function () {
@@ -2797,6 +2858,7 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
   };
 
   var KEYS = ['site', 'bridge', 'db', 'auth', 'storage', 'github'];
+  var TOTAL = KEYS.length;
   var res = {};
   var busy = false;
 
@@ -2805,7 +2867,7 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
     if (!panel) return;
     var done = KEYS.filter(function (k) { return res[k]; });
     var up = done.filter(function (k) { return res[k].ok; }).length;
-    var pct = done.length ? Math.round((up / done.length) * 100) : 0;
+    var pct = Math.round((up / TOTAL) * 100);
     var avg = done.length ? Math.round(done.reduce(function (a, k) { return a + res[k].ms; }, 0) / done.length) : 0;
 
     var ring = document.getElementById('spRing');
@@ -2825,9 +2887,10 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
       }).join('');
     }
     var set = function (id, v) { var e = document.getElementById(id); if (e) e.textContent = v; };
+    if (up > TOTAL) up = TOTAL;
     set('spPct', done.length ? pct + '%' : '…');
     set('spUp', up);
-    set('spTotal', KEYS.length);
+    set('spTotal', TOTAL);
     set('spAvg', avg ? avg + ' ms' : '—');
     set('spTime', new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }));
 
