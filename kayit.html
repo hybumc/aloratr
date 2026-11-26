@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#12b8c8" />
+<title>Üye Ol — ALORA</title>
+<meta name="description" content="ALORA'ya ücretsiz üye olun: projeleri indirin, yorum yapın, öneri bırakın." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230d1b2a'/%3E%3Cpath d='M32 12 51 51h-9.4L32 31 22.4 51H13Z' fill='%2312b8c8'/%3E%3C/svg%3E" />
+<link rel="stylesheet" href="assets/alora-ui.css" />
+</head>
+<body>
+<div class="page">
+
+  <header class="topbar">
+    <div class="topbar-in">
+      <a class="brand" href="index.html">
+        <span class="brand-mark">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 21 21h-4.6L12 11.6 7.6 21H3Z"/></svg>
+        </span>
+        ALORA
+      </a>
+      <div class="top-actions">
+        <a class="btn btn-ghost hide-sm" href="index.html">Siteye dön</a>
+        <a class="btn btn-secondary btn-sm" href="giris.html">Giriş yap</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="page-main">
+    <div class="auth-wrap">
+      <div class="wrap-narrow">
+
+        <div class="auth-head">
+          <h1>ALORA'ya katıl</h1>
+          <p>Ücretsiz üye olun. Projeleri indirin, yorum yapın, kendi önerilerinizi paylaşın.</p>
+        </div>
+
+        <div class="card auth-card">
+          <div class="alert alert-err" id="errBox"></div>
+          <div class="alert alert-ok" id="okBox"></div>
+
+          <form id="signupForm" novalidate autocomplete="on">
+            <div class="field">
+              <label for="fullName">Ad soyad</label>
+              <input id="fullName" name="name" type="text" autocomplete="name" placeholder="Berat Yıldız" required />
+            </div>
+
+            <div class="field">
+              <label for="username">Kullanıcı adı</label>
+              <input id="username" name="username" type="text" autocomplete="username"
+                     autocapitalize="none" spellcheck="false" placeholder="berat" required />
+              <small>3–20 karakter; harf, rakam, nokta ve alt çizgi</small>
+            </div>
+
+            <div class="field">
+              <label for="email">E-posta</label>
+              <input id="email" name="email" type="email" autocomplete="email"
+                     autocapitalize="none" spellcheck="false" placeholder="ornek@eposta.com" required />
+            </div>
+
+            <div class="field">
+              <label for="password">Şifre</label>
+              <div class="pw-wrap">
+                <input id="password" name="password" type="password" autocomplete="new-password"
+                       placeholder="En az 6 karakter" required />
+                <button class="pw-eye" type="button" data-pw="password" aria-label="Şifreyi göster">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+              </div>
+              <div style="display:flex;gap:4px;margin-top:8px" id="pwBars">
+                <i style="height:3px;flex:1;border-radius:2px;background:var(--line)"></i>
+                <i style="height:3px;flex:1;border-radius:2px;background:var(--line)"></i>
+                <i style="height:3px;flex:1;border-radius:2px;background:var(--line)"></i>
+                <i style="height:3px;flex:1;border-radius:2px;background:var(--line)"></i>
+              </div>
+              <small id="pwHint">Büyük harf, rakam ve simge eklemek güvenliği artırır</small>
+            </div>
+
+            <div class="field">
+              <label for="password2">Şifre (tekrar)</label>
+              <input id="password2" type="password" autocomplete="new-password" placeholder="••••••••" required />
+            </div>
+
+            <label class="check" style="margin-bottom:18px">
+              <input type="checkbox" id="terms" />
+              <span><a href="LICENSE" target="_blank">Kullanım koşullarını</a> ve gizlilik politikasını okudum, kabul ediyorum.</span>
+            </label>
+
+            <button class="btn btn-primary btn-block" type="submit" id="submitBtn">Hesap oluştur</button>
+          </form>
+
+          <p class="form-note">
+            Zaten üye misiniz? <a href="giris.html">Giriş yapın</a>
+          </p>
+        </div>
+
+        <p class="form-note" style="margin-top:18px">
+          Üyelik ücretsizdir. Proje yüklemek için ayrıca yetkili onayı gerekir.
+        </p>
+
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-foot">
+    © 2026 ALORA — Proje Platformu · <a href="index.html">Gizlilik</a> · <a href="LICENSE">Lisans</a>
+  </footer>
+
+</div>
+
+<script src="assets/alora-ui.js"></script>
+<script src="alora-auth.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var errBox = document.getElementById('errBox');
+  var okBox = document.getElementById('okBox');
+  var form = document.getElementById('signupForm');
+  var btn = document.getElementById('submitBtn');
+
+  function show(el, msg) {
+    errBox.classList.remove('show'); okBox.classList.remove('show');
+    if (!msg) return;
+    el.textContent = msg;
+    el.classList.add('show');
+  }
+
+  // parola gücü
+  var bars = document.querySelectorAll('#pwBars i');
+  var COLORS = ['#e5484d', '#f5a623', '#f5d623', '#17b26a'];
+  document.getElementById('password').addEventListener('input', function () {
+    var s = AloraUI.strength(this.value);
+    bars.forEach(function (b, i) {
+      b.style.background = i < s ? COLORS[Math.max(0, s - 1)] : 'var(--line)';
+    });
+  });
+
+  // kullanıcı adı: sadece izinli karakterler
+  document.getElementById('username').addEventListener('input', function () {
+    this.value = this.value.replace(/[^a-zA-Z0-9._]/g, '').slice(0, 20).toLowerCase();
+  });
+
+  form.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var fullName = document.getElementById('fullName').value.trim();
+    var username = document.getElementById('username').value.trim();
+    var email = document.getElementById('email').value.trim();
+    var pw = document.getElementById('password').value;
+    var pw2 = document.getElementById('password2').value;
+    var terms = document.getElementById('terms').checked;
+
+    if (fullName.length < 2) { show(errBox, 'Adınızı yazın'); return; }
+    if (username.length < 3) { show(errBox, 'Kullanıcı adı en az 3 karakter olmalı'); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { show(errBox, 'Geçerli bir e-posta adresi girin'); return; }
+    if (pw.length < 6) { show(errBox, 'Şifre en az 6 karakter olmalı'); return; }
+    if (pw !== pw2) { show(errBox, 'Şifreler birbiriyle uyuşmuyor'); return; }
+    if (!terms) { show(errBox, 'Devam etmek için koşulları kabul edin'); return; }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spin"></span> Hesap oluşturuluyor…';
+    show(null);
+
+    try {
+      var r = await AloraAuth.signUp(email, pw, username, fullName);
+      if (r.needConfirm) {
+        show(okBox, 'Hesabınız oluşturuldu. E-postanıza gelen doğrulama bağlantısına tıklayın, sonra giriş yapın.');
+        btn.textContent = 'E-posta gönderildi';
+        setTimeout(function () { location.href = 'giris.html'; }, 4000);
+      } else {
+        location.replace('hesabim.html');
+      }
+    } catch (err) {
+      var m = err.message || 'Kayıt yapılamadı';
+      if (/already/i.test(m)) m = 'Bu e-posta veya kullanıcı adı zaten kullanılıyor';
+      show(errBox, m);
+      btn.disabled = false;
+      btn.textContent = 'Hesap oluştur';
+    }
+  });
+})();
+</script>
+</body>
+</html>
