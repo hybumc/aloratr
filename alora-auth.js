@@ -63,6 +63,10 @@
   }
 
   function tr(m) {
+    // Supabase e-posta gönderim sınırı (saatlik) — kullanıcıyı bilgilendir
+    if (/rate limit/i.test(m)) {
+      return 'Çok fazla kayıt denemesi yapıldı. 1 saat sonra tekrar deneyin ya da farklı bir e-posta ile kayıt olun.';
+    }
     const map = {
       'Invalid login credentials': 'Kullanıcı adı veya şifre hatalı',
       'Email not confirmed': 'E-posta adresi doğrulanmamış',
