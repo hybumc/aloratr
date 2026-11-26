@@ -151,8 +151,63 @@
   const SUPABASE_URL = 'https://mwmeqcdjeyuflkobezby.supabase.co';
 
   // Indirme: dogrudan Supabase public storage (anahtar gerekmez, herkese acik)
-  function publicUrl(path) {
-    return SUPABASE_URL + '/storage/v1/object/public/' + BUCKET + '/' + path.split('/').map(encodeURIComponent).join('/');
+  function publicUrl(path, parts) {
+    if (parts && parts > 1) {
+      var name = path.split('/').pop().split('-').slice(1).join('-') || path.split('/').pop();
+      return PROXY_URL + '/filechunks/' + path.split('/').map(encodeURIComponent).join('/') + '?parts=' + parts + '&name=' + encodeURIComponent(name);
+    }
+    return PROXY_URL + '/file/' + path.split('/').map(encodeURIComponent).join('/');
+  }
+
+  var CHUNK = 40 * 1024 * 1024; // 40 MB parça (Supabase 50 MB sınırının altında)
+
+  function putChunk(urlPath, blob, onProgress) {
+    session = readSession();
+    if (!session || !session.access_token) {
+      return Promise.reject(new Error('Oturum bulunamadı. Lütfen tekrar giriş yapın.'));
+    }
+    return new Promise(function (resolve, reject) {
+      var xhr = new XMLHttpRequest();
+      xhr.open('PUT', PROXY_URL + urlPath, true);
+      xhr.setRequestHeader('x-alora-key', PUBLIC_TOKEN);
+      xhr.setRequestHeader('x-alora-token', session.access_token);
+      xhr.setRequestHeader('Content-Type', 'application/octet-stream');
+      if (typeof onProgress === 'function') {
+        xhr.upload.onprogress = function (ev) {
+          if (ev.lengthComputable) onProgress(ev.loaded, ev.total);
+        };
+      }
+      xhr.onload = function () {
+        if (xhr.status >= 200 && xhr.status < 300) { resolve(true); return; }
+        var msg = 'Parça yüklenemedi (' + xhr.status + ')';
+        try { var jj = JSON.parse(xhr.responseText); msg = jj.error || jj.message || msg; } catch (e) {}
+        reject(new Error(msg));
+      };
+      xhr.onerror = function () { reject(new Error('Bağlantı hatası — parça yüklenemedi.')); };
+      xhr.send(blob);
+    });
+  }
+
+  // Büyük dosyayı parçalara bölerek yükler. onProgress(yuklenenBayt, toplamBayt)
+  async function uploadParts(path, file, onProgress) {
+    var parts = Math.ceil(file.size / CHUNK);
+    if (parts <= 1) {
+      return upload(path, file, onProgress);
+    }
+    var sentBase = 0;
+    for (var i = 1; i <= parts; i++) {
+      var start = (i - 1) * CHUNK;
+      var end = Math.min(file.size, start + CHUNK);
+      var blob = file.slice(start, end);
+      var base = sentBase;
+      await putChunk('/upload/' + path.split('/').map(encodeURIComponent).join('/') + '.part' + i,
+        blob, function (loaded) {
+          if (onProgress) onProgress(base + loaded, file.size);
+        });
+      sentBase += blob.size;
+      if (onProgress) onProgress(sentBase, file.size);
+    }
+    return { parts: parts, storagePath: path };
   }
 
   function upload(path, file, onProgress) {
@@ -209,7 +264,7 @@
   window.AloraAPI = {
     PROXY_URL, BUCKET,
     rest, signIn, signOut, currentUser, profile,
-    upload, remove, publicUrl, bump,
+    upload, uploadParts, remove, publicUrl, bump,
     hasSession: () => !!session,
     sessionUser: () => (session ? session.user : null)
   };
