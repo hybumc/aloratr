@@ -504,6 +504,30 @@ html[data-theme="dark"] .um-panel{background:linear-gradient(135deg,var(--brand)
 html[data-theme="dark"] .um-drop{background:#0f1822;border-color:#25333f;box-shadow:0 22px 50px -18px rgba(0,0,0,.9)}
 html[data-theme="dark"] .um-item:hover{background:rgba(94,230,242,.11)}
 @media(max-width:560px){ .um-txt{display:none} .um-panel .hide-sm{display:none} }
+
+/* ---- kullanıcı menüsü: mobil ve tema garantileri ---- */
+@media (max-width:900px){
+  .um-txt{display:none}
+  .um-panel{padding:8px 11px;border-radius:10px}
+  .um-panel .hide-sm{display:none}
+  .um-drop{min-width:212px}
+}
+@media (max-width:640px){
+  .nav-links{gap:8px}
+  .um-wrap{margin-left:auto}
+  .um-btn{min-height:34px}
+  .um-av{width:26px;height:26px;font-size:11px}
+}
+html[data-theme="dark"] .um-btn{background:#111c26;border-color:#25333f;color:#eaf1f8}
+html[data-theme="dark"] .um-txt strong{color:#eaf1f8}
+html[data-theme="dark"] .um-panel{background:linear-gradient(135deg,#12b8c8,#0f9fb5);border-color:transparent;color:#fff}
+html[data-theme="dark"] .um-panel:hover{color:#fff}
+html[data-theme="dark"] .um-drop{background:#0f1822;border-color:#25333f}
+html[data-theme="dark"] .um-drop-head{border-color:#25333f}
+html[data-theme="dark"] .um-drop-head strong{color:#eaf1f8}
+html[data-theme="dark"] .um-item{color:#b7c6d6}
+html[data-theme="dark"] .um-item:hover{background:rgba(94,230,242,.12);color:#5ee6f2}
+html[data-theme="dark"] .um-sep{background:#25333f}
 </style>
 </head>
 <body>
