@@ -219,6 +219,16 @@ html[data-theme="dark"] .notes-box{background:#0d1721;border-color:#1e2c39}
 .step h3{color:#fff;font-size:15px;margin:0 0 6px}
 .step p{color:rgba(255,255,255,.72);font-size:13px;line-height:1.55;margin:0}
 
+.legal-card{max-width:680px}
+.legal-body{max-height:64vh;overflow-y:auto;padding:4px 2px 2px;color:var(--ink-2);font-size:14.5px;line-height:1.75}
+.legal-body h4{margin:18px 0 6px;font-size:14.5px;color:var(--ink);font-weight:700}
+.legal-body p{margin:0 0 10px}
+.legal-body ul{margin:0 0 12px;padding-left:20px}
+.legal-body li{margin-bottom:6px}
+.legal-body a{color:var(--brand,#2b7fff);text-decoration:underline}
+.legal-note{margin-top:18px;padding-top:12px;border-top:1px solid var(--line);font-size:12.5px;color:var(--ink-3,#8794a3)}
+html[data-theme="dark"] .legal-body{color:#b9c6d3}
+html[data-theme="dark"] .legal-body h4{color:#e8eff6}
 /* footer */
 footer{border-top:1px solid var(--line);background:#fbfdff;padding:44px 0 34px}
 .foot{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:32px}
@@ -563,7 +573,7 @@ html[data-theme="dark"] .toast{background:#152330;color:#eaf1f8}
           <button class="btn btn-primary" type="button" data-open-login id="emptyLoginBtn">Yetkili Girişi</button>
           <a href="#oneriler" class="btn btn-secondary">Öneri Bırak</a>
         </div>
-        <div class="empty-hint">Veritabanı bağlı · Projeler sunucuda saklanır</div>
+        <div class="empty-hint">Projeler yetkili hesaplar tarafından eklenir</div>
       </div>
 
       <div class="grid is-hidden" id="grid"></div>
@@ -679,15 +689,16 @@ html[data-theme="dark"] .toast{background:#152330;color:#eaf1f8}
       <div>
         <h4>Kurumsal</h4>
         <ul>
-          <li><a href="#">Hakkımızda</a></li>
-          <li><a href="#">Gizlilik</a></li>
-          <li><a href="#">Kullanım Koşulları</a></li>
-          <li><a href="#">İletişim</a></li>
+          <li><a href="#" data-legal="hakkimizda">Hakkımızda</a></li>
+          <li><a href="#" data-legal="gizlilik">Gizlilik</a></li>
+          <li><a href="#" data-legal="kosullar">Kullanım Koşulları</a></li>
+          <li><a href="#" data-legal="lisans">Lisans</a></li>
+          <li><a href="#" data-legal="iletisim">İletişim</a></li>
         </ul>
       </div>
     </div>
     <div class="foot-bottom">
-      <span>© <span id="year">2026</span> ALORA — Proje Platformu.</span>
+      <span>© <span id="year">2026</span> ALORA — Proje Platformu · <a href="#" data-legal="lisans" style="color:inherit;text-decoration:underline">MIT Lisansı</a></span>
       <span id="footStats">Sunucuya bağlanılıyor…</span>
     </div>
   </div>
@@ -1166,6 +1177,141 @@ html[data-theme="dark"] .toast{background:#152330;color:#eaf1f8}
   }
 })();
 
+/* ============================================================
+   ALORA — sayfa içeriği: yasal metinler (Gizlilik, Koşullar,
+   Hakkımızda, İletişim, Lisans) + modal davranışları
+   ============================================================ */
+(function () {
+  'use strict';
+
+  const LEGAL = {
+    hakkimizda: {
+      title: 'Hakkımızda',
+      html:
+        '<p><strong>ALORA</strong>, yetkili ekiplerin kendi projelerini yayınladığı, herkesin indirip geri bildirim bıraktığı bir proje kütüphanesidir.</p>' +
+        '<p>Amacımız basit: aradığın programı bulmak, tek tıkla indirmek ve indirdiğin şeyin gerçekten ne olduğunu bilmek. Bu yüzden her projede açıklama, sürüm, güncelleme notu ve dosya boyutu görünür.</p>' +
+        '<h4>Kimler proje ekleyebilir?</h4>' +
+        '<p>Yalnızca yönetici tarafından tanımlanmış yetkili hesaplar. Ziyaretçiler giriş yapmadan tüm projeleri görüntüleyip indirebilir, yorum ve öneri bırakabilir.</p>' +
+        '<h4>Nasıl çalışır?</h4>' +
+        '<p>Proje bilgileri bir veritabanında, dosyalar güvenli bir depolama alanında tutulur. Site statik olarak yayınlanır; tarayıcın doğrudan veri servisine bağlanır.</p>'
+    },
+    gizlilik: {
+      title: 'Gizlilik Politikası',
+      html:
+        '<p>Bu sayfa, ALORA kullanılırken hangi verilerin işlendiğini açıklar.</p>' +
+        '<h4>Topladığımız veriler</h4>' +
+        '<ul>' +
+        '<li><strong>Yetkili hesapları:</strong> e-posta adresi ve şifre. Şifreler asla okunabilir şekilde saklanmaz, servis sağlayıcı tarafından geri döndürülemez biçimde şifrelenir.</li>' +
+        '<li><strong>Yorumlar:</strong> yazdığın görünen ad (boş bırakırsan "Ziyaretçi"), yorum metni, verdiğin puan ve tarih. Bu bilgiler proje sayfasında <em>herkese açık</em> görünür.</li>' +
+        '<li><strong>İndirme sayıları:</strong> hangi dosyanın kaç kez indirildiğine dair toplu sayaç. Kişisel kimlik bilgisi tutulmaz.</li>' +
+        '</ul>' +
+        '<h4>Çerezler ve yerel depolama</h4>' +
+        '<p>Reklam veya izleme çerezi kullanılmıyor. Tarayıcında yalnızca oturum bilgisi (giriş yaptıysan) ve tema tercihin saklanır. Bunları tarayıcı ayarlarından silebilirsin.</p>' +
+        '<h4>Verilerin saklandığı yer</h4>' +
+        '<p>Veritabanı ve dosyalar Supabase altyapısında (AB sunucuları) barındırılır. Site GitHub Pages üzerinden yayınlanır. Bu sağlayıcılar kendi gizlilik politikalarına tabidir.</p>' +
+        '<h4>Haklarınız</h4>' +
+        '<p>Yazdığın bir yorumun kaldırılmasını istersen iletişim bölümünden bize ulaş. Talebin makul süre içinde yerine getirilir.</p>' +
+        '<h4>Çocuklar</h4>' +
+        '<p>Platform 13 yaş altı kullanıcılardan bilerek veri toplamaz.</p>' +
+        '<p class="legal-note">Son güncelleme: 26 Kasım 2026</p>'
+    },
+    kosullar: {
+      title: 'Kullanım Koşulları',
+      html:
+        '<p>ALORA\'yı kullanarak aşağıdaki koşulları kabul etmiş olursun.</p>' +
+        '<h4>1. Hizmetin kapsamı</h4>' +
+        '<p>ALORA, yetkili kişilerin yüklediği yazılım dosyalarını listeleyen bir kütüphanedir. Dosyaların sahibi veya geliştiricisi değiliz; yalnızca yayınlandıkları alanı sağlıyoruz.</p>' +
+        '<h4>2. İndirilen dosyalar</h4>' +
+        '<p>Bir dosyayı indirip çalıştırmak tamamen senin sorumluluğundadır. Dosyaları kendi bilgisayarında, kendi antivirüs taramanla kontrol etmeni öneririz. Yüklenen bir dosyanın içeriğinden yükleyen yetkili sorumludur.</p>' +
+        '<h4>3. Yetkili hesapları</h4>' +
+        '<p>Proje ekleme hakkı yalnızca yönetici tarafından verilir. Hesabını başkasıyla paylaşamazsın; hesabın altında yapılan tüm işlemlerden sen sorumlusun.</p>' +
+        '<h4>4. Yasak içerik</h4>' +
+        '<p>Zararlı yazılım (virüs, fidye, casus yazılım), telif hakkı ihlali, kişisel veri sızdırma veya yasa dışı içerik yüklenemez. Tespit edilen içerik uyarı yapılmadan kaldırılır ve hesap kapatılır.</p>' +
+        '<h4>5. Yorumlar</h4>' +
+        '<p>Hakaret, spam ve reklam içeren yorumlar silinir. Yorumların herkese açık olduğunu unutma; kişisel bilgi yazma.</p>' +
+        '<h4>6. Sorumluluk sınırı</h4>' +
+        '<p>Hizmet "olduğu gibi" sunulur. Kesintisiz veya hatasız çalışacağı garanti edilmez. Veri kaybı, indirilen dosyadan doğan zarar veya hizmet kesintisinden doğan zararlar için sorumluluk kabul edilmez.</p>' +
+        '<h4>7. Değişiklikler</h4>' +
+        '<p>Bu koşullar güncellenebilir. Güncel sürüm her zaman bu sayfada yayınlanır.</p>' +
+        '<p class="legal-note">Son güncelleme: 26 Kasım 2026</p>'
+    },
+    iletisim: {
+      title: 'İletişim',
+      html:
+        '<p>Hata bildirimi, kaldırma talebi veya iş birliği için bize ulaşabilirsin.</p>' +
+        '<ul>' +
+        '<li><strong>E-posta:</strong> <a href="mailto:hybumc@proton.me">hybumc@proton.me</a></li>' +
+        '<li><strong>GitHub:</strong> <a href="https://github.com/hybumc" target="_blank" rel="noopener">github.com/hybumc</a></li>' +
+        '</ul>' +
+        '<h4>Hangi durumlarda yazmalısın?</h4>' +
+        '<ul>' +
+        '<li>Bir proje hatalı çalışıyorsa veya dosyası bozuksa</li>' +
+        '<li>Telif hakkı ihlali olduğunu düşündüğün bir dosya varsa</li>' +
+        '<li>Yorumunun kaldırılmasını istiyorsan</li>' +
+        '<li>Yetkili hesabı talep ediyorsan</li>' +
+        '</ul>' +
+        '<p>Ortalama yanıt süresi 2–3 iş günüdür.</p>'
+    },
+    lisans: {
+      title: 'Lisans',
+      html:
+        '<p>ALORA platformunun kendi arayüz ve kodları <strong>MIT Lisansı</strong> ile sunulur: kopyalayabilir, değiştirebilir ve kendi projenizde kullanabilirsiniz; tek şart telif bildirimini korumanızdır.</p>' +
+        '<h4>Yüklenen projeler ayrı lisanslıdır</h4>' +
+        '<p>Platform üzerinde listelenen her yazılım kendi lisansına sahiptir. Bir projeyi indirmek, onu yeniden dağıtma hakkı vermez. Projenin lisansı açıklamasında veya dosyası içindeki LICENSE dosyasında belirtilir.</p>' +
+        '<h4>Ticari markalar</h4>' +
+        '<p>Windows, Microsoft Corporation\'ın; Android, Google LLC\'nin tescilli markalarıdır. ALORA bu şirketlerle bağlantılı değildir.</p>' +
+        '<p class="legal-note">MIT License — Copyright (c) 2026 ALORA</p>'
+    }
+  };
+
+  function openLegal(key) {
+    const d = LEGAL[key];
+    if (!d) return;
+    let box = document.getElementById('legalModal');
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'legalModal';
+      box.className = 'modal';
+      box.innerHTML =
+        '<div class="modal-card legal-card" role="dialog" aria-modal="true" aria-labelledby="legalTitle">' +
+          '<div class="modal-head">' +
+            '<div><h3 id="legalTitle"></h3><p id="legalSub"></p></div>' +
+            '<button class="btn btn-icon" type="button" aria-label="Kapat" id="legalClose" style="width:34px;height:34px">' +
+              '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>' +
+            '</button>' +
+          '</div>' +
+          '<div class="legal-body" id="legalBody"></div>' +
+        '</div>';
+      document.body.appendChild(box);
+      box.addEventListener('click', (e) => {
+        if (e.target === box || e.target.closest('#legalClose')) {
+          box.classList.remove('open');
+          document.body.style.overflow = '';
+        }
+      });
+    }
+    document.getElementById('legalTitle').textContent = d.title;
+    document.getElementById('legalSub').textContent = 'ALORA — Proje Kütüphanesi';
+    document.getElementById('legalBody').innerHTML = d.html;
+    box.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    document.getElementById('legalBody').scrollTop = 0;
+  }
+
+  window.openLegal = openLegal;
+
+  document.addEventListener('click', (e) => {
+    const link = e.target.closest('[data-legal]');
+    if (link) { e.preventDefault(); openLegal(link.getAttribute('data-legal')); }
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      const box = document.getElementById('legalModal');
+      if (box && box.classList.contains('open')) { box.classList.remove('open'); document.body.style.overflow = ''; }
+    }
+  });
+})();
+
 /* ALORA — arayüz mantığı (Supabase sürümü) */
 (function () {
   'use strict';
@@ -1348,17 +1494,43 @@ html[data-theme="dark"] .toast{background:#152330;color:#eaf1f8}
   function render() {
     const grid = $('#grid');
     if (!grid) return;
+
+    // yükleniyor iskeletini her zaman gizle
+    const sk = $('#skeleton');
+    if (sk) sk.classList.add('is-hidden');
+
     const list = visibleProjects();
-    if (!list.length) {
-      grid.innerHTML = '<div class="empty">' +
-        '<h3>Henüz proje yok</h3>' +
-        '<p>Yetkili hesapla giriş yapıp ilk projeyi ekleyin. Herkes indirebilir, giriş gerekmez.</p>' +
-        '<button class="btn btn-primary" type="button" id="emptyLoginBtn" data-open-login>Yetkili Girişi</button>' +
-        '</div>';
+    const emptyState = $('#emptyState');
+    const noResults = $('#noResults');
+    const toolbar = $('#toolbar');
+
+    if (!state.projects.length) {
+      // hiç proje yok
+      grid.classList.add('is-hidden');
+      grid.innerHTML = '';
+      if (noResults) noResults.classList.add('is-hidden');
+      if (toolbar) toolbar.classList.add('is-hidden');
+      if (emptyState) emptyState.classList.remove('is-hidden');
       paintUser();
       renderStats();
       return;
     }
+
+    if (!list.length) {
+      // proje var ama filtreye uyan yok
+      grid.classList.add('is-hidden');
+      grid.innerHTML = '';
+      if (emptyState) emptyState.classList.add('is-hidden');
+      if (noResults) noResults.classList.remove('is-hidden');
+      if (toolbar) toolbar.classList.remove('is-hidden');
+      paintUser();
+      renderStats();
+      return;
+    }
+
+    if (emptyState) emptyState.classList.add('is-hidden');
+    if (noResults) noResults.classList.add('is-hidden');
+    if (toolbar) toolbar.classList.remove('is-hidden');
     grid.classList.remove('is-hidden');
 
     grid.innerHTML = list.map((p, i) => {
