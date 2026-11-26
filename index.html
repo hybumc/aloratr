@@ -1596,6 +1596,12 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
       $('#emptyLoginBtn').textContent = 'Yeni Proje Ekle';
       $('#emptyLoginBtn').setAttribute('data-open-add', '');
       $('#emptyLoginBtn').removeAttribute('data-open-login');
+      document.querySelectorAll('[data-open-login]').forEach((b) => {
+        if (b.id === 'loginBtn' || b.id === 'signupBtn') return;
+        b.setAttribute('data-open-add', '');
+        b.removeAttribute('data-open-login');
+        if (/Yetkili/i.test(b.textContent || '')) b.textContent = 'Yeni Proje Ekle';
+      });
     } else {
       chip.classList.add('is-hidden');
       loginBtn.classList.remove('is-hidden');
@@ -1604,6 +1610,13 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
       $('#emptyLoginBtn').textContent = 'Yetkili Girişi';
       $('#emptyLoginBtn').setAttribute('data-open-login', '');
       $('#emptyLoginBtn').removeAttribute('data-open-add');
+      document.querySelectorAll('[data-open-add]').forEach((b) => {
+        if (b.id === 'addProjectBtn' || b.id === 'heroAddBtn' || b.id === 'modalAdd') return;
+        if (!/Yeni Proje Ekle/i.test(b.textContent || '')) return;
+        b.setAttribute('data-open-login', '');
+        b.removeAttribute('data-open-add');
+        b.textContent = 'Yetkili Girişi';
+      });
     }
   }
 
