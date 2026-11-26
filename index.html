@@ -1442,6 +1442,31 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
   }
 
   function upload(path, file, onProgress) {
+    session = readSession();
+    if (!session || !session.access_token) {
+      return Promise.reject(new Error('Oturum bulunamadı. Lütfen tekrar giriş yapın.'));
+    }
+    return new Promise(function (resolve, reject) {
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', PROXY_URL + '/upload/' + path.split('/').map(encodeURIComponent).join('/'), true);
+      xhr.setRequestHeader('x-alora-key', PUBLIC_TOKEN);
+      xhr.setRequestHeader('x-alora-token', session.access_token);
+      xhr.setRequestHeader('Content-Type', 'application/octet-stream');
+      if (typeof onProgress === 'function') {
+        xhr.upload.onprogress = function (ev) {
+          if (ev.lengthComputable) onProgress(ev.loaded, ev.total);
+        };
+      }
+      xhr.onload = function () {
+        if (xhr.status >= 200 && xhr.status < 300) { resolve(true); return; }
+        var msg = 'Yüklenemedi (' + xhr.status + ')';
+        try { var jj = JSON.parse(xhr.responseText); msg = jj.error || jj.message || msg; } catch (e) {}
+        reject(new Error(msg));
+      };
+      xhr.onerror = function () { reject(new Error('Bağlantı hatası — dosya yüklenemedi.')); };
+      xhr.send(file);
+    });
+  }
 
   async function remove(path) {
     session = readSession();
@@ -1937,6 +1962,9 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
   }
 
   async function loadProjects() {
+    const sk0 = $('#skeleton');
+    if (sk0) sk0.classList.add('is-hidden');
+    const t0 = setTimeout(() => { if (!state.projects.length) render(); }, 1200);
     try {
       const rows = await API.rest('projects?select=*,files(*),comments(id)&order=created_at.desc');
       state.projects = (rows || []).map((p) => {
@@ -1953,6 +1981,7 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
       state.projects = [];
       toast('Projeler yüklenemedi: ' + e.message, 'err');
     }
+    clearTimeout(t0);
     render();
   }
 
