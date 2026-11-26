@@ -11,6 +11,21 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="assets/auth.css" />
+<style>
+/* sol panel: içeriği dikey ortala, taşmayı engelle */
+.auth-aside{justify-content:center !important;gap:26px;padding:38px 44px !important}
+.auth-aside .aside-top{position:absolute;top:34px;left:44px;right:44px}
+.auth-aside .aside-foot{position:absolute;bottom:30px;left:44px;right:44px}
+.aside-mid{margin:0 !important;max-width:430px}
+.aside-mid h2{font-size:clamp(23px,2.2vw,29px) !important;line-height:1.25}
+.aside-mid p{font-size:13.5px !important;line-height:1.62;margin-top:11px !important}
+.aside-list{margin-top:20px !important;gap:11px !important}
+.aside-list li{font-size:13px !important}
+.aside-stats{margin-top:22px !important;gap:26px !important}
+.aside-stats b{font-size:17px !important}
+@media(max-width:1250px){ .auth-aside{padding:32px 34px !important} .auth-aside .aside-top,.auth-aside .aside-foot{left:34px;right:34px} }
+@media(max-height:760px){ .aside-stats{display:none} .aside-list{margin-top:14px !important} }
+</style>
 </head>
 <body>
 
