@@ -128,6 +128,10 @@
     write(null);
   }
 
+  async function meUncached() {
+    try { return await me(); } catch (e) { return null; }
+  }
+
   async function me() {
     const sess = read();
     if (!sess || !sess.access_token) return null;
@@ -145,7 +149,13 @@
             expires_at: Date.now() + (r.expires_in || 3600) * 1000
           });
           write(next, !!localStorage.getItem(SKEY));
-          return { session: next, user: next.user, profile: null };
+          // yenilenen token ile profili tekrar oku
+          try {
+            const pdata = await call('/auth/user');
+            return { session: next, user: pdata.user || next.user, profile: pdata.profile || null };
+          } catch (e3) {
+            return { session: next, user: next.user, profile: null };
+          }
         } catch (e2) { write(null); return null; }
       }
       return null;
@@ -168,7 +178,7 @@
   function isAdmin(p) { return !!p && p.role === 'admin' && !p.banned; }
 
   window.AloraAuth = {
-    signIn, signUp, signOut, me, updateProfile, resetPassword,
+    signIn, signUp, signOut, me, meUncached, updateProfile, resetPassword,
     session: read, roleLabel, isStaff, isAdmin, deviceName, call
   };
 })();
