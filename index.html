@@ -1693,9 +1693,12 @@ try { if (localStorage.getItem("alora.theme") === "dark") document.documentEleme
       toast('Hoş geldiniz, ' + (me.full_name || me.username));
       loadProjects();
     } catch (e2) {
-      err.textContent = e2.message === 'Invalid login credentials'
-        ? 'E-posta veya şifre hatalı.'
-        : e2.message;
+      const msg = String((e2 && e2.message) || '');
+      err.textContent =
+        /invalid login credentials|400|401/i.test(msg) ? 'Kullanıcı adı veya şifre hatalı.' :
+        /405/i.test(msg) ? 'Sunucu bu isteği kabul etmedi (405). Sayfayı yenileyip tekrar deneyin.' :
+        /failed to fetch|network/i.test(msg) ? 'Sunucuya ulaşılamadı. İnternet bağlantınızı kontrol edin.' :
+        msg || 'Giriş yapılamadı.';
       err.classList.remove('is-hidden');
     } finally {
       btn.disabled = false;
